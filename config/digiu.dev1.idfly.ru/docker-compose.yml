@@ -1,0 +1,11 @@
+version: '3'
+services:
+  frontend:
+    image: nginx:1.19
+    container_name: frontend.digiu.dev1.idfly.ru
+    ports:
+      - '1137:80'
+    working_dir: /app
+    volumes:
+      - ../../packages/pancake-swap-interface/build:/app
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf

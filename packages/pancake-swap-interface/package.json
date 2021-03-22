@@ -3,6 +3,7 @@
   "description": "Pancakeswap Interface",
   "homepage": ".",
   "private": true,
+  "version": "1.0.0",
   "dependencies": {
     "@binance-chain/bsc-connector": "^1.0.0",
     "@crowdin/crowdin-api-client": "^1.8.16",
@@ -23,7 +24,7 @@
     "@ethersproject/bytes": "^5.0.1",
     "@ethersproject/experimental": "^5.0.1",
     "@pancakeswap-libs/sdk": "1.0.1",
-    "@pancakeswap-libs/uikit": "^0.15.1",
+    "@pancakeswap-libs/uikit": "^0.15.2",
     "@popperjs/core": "^2.4.4",
     "@reach/dialog": "^0.10.3",
     "@reach/portal": "^0.10.3",
