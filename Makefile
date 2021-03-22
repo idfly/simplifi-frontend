@@ -4,11 +4,20 @@ BRANCH ?= main
 build-image:
 	docker build --rm -t rush .
 
+build-sdk:
+	docker run --rm -v "`pwd`:/app" -v "`pwd`/.rush:/root/.rush" -w /app rush bash -c "rush update; rush build -t @pancakeswap-libs/sdk;"
+
+build-uikit:
+	docker run --rm -v "`pwd`:/app" -v "`pwd`/.rush:/root/.rush" -w /app rush bash -c "rush update; rush build -t @pancakeswap-libs/uikit;"
+
 build:
 	docker run --rm -v "`pwd`:/app" -v "`pwd`/.rush:/root/.rush" -w /app rush bash -c "rush update; rush build;"
 
 start:
-	docker-compose -f config/${ENV}/docker-compose.yml  up -d --force-recreate
+	docker-compose -f config/${ENV}/docker-compose.yml  up -d --force-recreate frontend
+
+start-uikit:
+	docker-compose -f config/${ENV}/docker-compose.yml  up -d --force-recreate uikit
 
 up:
 	make build-image

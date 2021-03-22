@@ -8,20 +8,23 @@ import useGetPriceData from 'hooks/useGetPriceData'
 import useGetLocalProfile from 'hooks/useGetLocalProfile'
 import useAuth from 'hooks/useAuth'
 import links from './config'
+import {NETWORK_NAMES} from "../../constants";
 
 const Menu: React.FC = (props) => {
-  const { account } = useWeb3React()
+  const { account, chainId } = useWeb3React()
   const { login, logout } = useAuth()
   const { selectedLanguage, setSelectedLanguage } = useContext(LanguageContext)
   const { isDark, toggleTheme } = useTheme()
   const priceData = useGetPriceData()
   const cakePriceUsd = priceData ? Number(priceData.prices.Cake) : undefined
   const profile = useGetLocalProfile()
+  const networkName = chainId ? NETWORK_NAMES[chainId] || '' : ''
 
   return (
     <UikitMenu
       links={links}
       account={account as string}
+      networkName={networkName}
       login={login}
       logout={logout}
       isDark={isDark}

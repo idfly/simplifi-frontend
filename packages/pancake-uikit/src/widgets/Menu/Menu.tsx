@@ -63,6 +63,7 @@ const MobileOnlyOverlay = styled(Overlay)`
 
 const Menu: React.FC<NavProps> = ({
   account,
+  networkName,
   login,
   logout,
   isDark,
@@ -123,7 +124,8 @@ const Menu: React.FC<NavProps> = ({
           href={homeLink?.href ?? "/"}
         />
         <Flex>
-          <UserBlock account={account} login={login} logout={logout} />
+          <UserBlock account={account} login={login} logout={logout}
+                     networkName={networkName} />
           {profile && <Avatar profile={profile} />}
         </Flex>
       </StyledNav>
