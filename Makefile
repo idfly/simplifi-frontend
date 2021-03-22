@@ -5,10 +5,8 @@ build-image:
 	docker build --rm -t rush .
 
 build:
-	docker run --rm -v "`pwd`:/app" -w /app rush bash -c "\
-		rush update; \
-		rush build; \
-	  "
+	docker run --rm -v "`pwd`:/app" -v "`pwd`/.rush:/root/.rush" -w /app rush bash -c "rush update; rush build;"
+
 start:
 	docker-compose -f config/${ENV}/docker-compose.yml  up -d --force-recreate
 

@@ -9,7 +9,7 @@ services:
     entrypoint: bash -c "cd packages/pancake-swap-interface && rushx start"
     volumes:
       - ../../:/app
-        - ../../.rush:/root/.rush
+      - ../../.rush:/root/.rush
 
   uikit:
     image: rush
