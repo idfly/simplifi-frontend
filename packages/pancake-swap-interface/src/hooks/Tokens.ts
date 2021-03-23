@@ -1,5 +1,11 @@
 import { parseBytes32String } from '@ethersproject/strings'
-import { Currency, ETHER, Token, currencyEquals } from '@pancakeswap-libs/sdk'
+import {
+  Currency,
+  BNB,
+  Token,
+  currencyEquals,
+  ETHER
+} from '@pancakeswap-libs/sdk'
 import { useMemo } from 'react'
 import { useSelectedTokenList } from '../state/lists/hooks'
 import { NEVER_RELOAD, useSingleCallResult } from '../state/multicall/hooks'
@@ -104,6 +110,7 @@ export function useToken(tokenAddress?: string): Token | undefined | null {
 
 export function useCurrency(currencyId: string | undefined): Currency | null | undefined {
   const isBNB = currencyId?.toUpperCase() === 'BNB'
-  const token = useToken(isBNB ? undefined : currencyId)
-  return isBNB ? ETHER : token
+  const isETH = currencyId?.toUpperCase() === 'ETH'
+  const token = useToken(isBNB || isETH ? undefined : currencyId)
+  return isBNB ? BNB : isETH ? ETHER : token
 }

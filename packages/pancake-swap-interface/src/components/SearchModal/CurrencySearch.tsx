@@ -1,4 +1,4 @@
-import { Currency, ETHER, Token } from '@pancakeswap-libs/sdk'
+import {Currency, BNB, Token, ETHER} from '@pancakeswap-libs/sdk'
 import React, { KeyboardEvent, RefObject, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { Text, CloseIcon } from '@pancakeswap-libs/uikit'
 import { useSelector } from 'react-redux'
@@ -57,10 +57,15 @@ export function CurrencySearch({
   const isAddressSearch = isAddress(searchQuery)
   const searchToken = useToken(searchQuery)
 
+  const showBNB: boolean = useMemo(() => {
+    const s = searchQuery.toLowerCase().trim()
+    return chainId && chainId > 4 && s === '' || s === 'b' || s === 'bn' || s === 'bnb'
+  }, [searchQuery, chainId])
+
   const showETH: boolean = useMemo(() => {
     const s = searchQuery.toLowerCase().trim()
-    return s === '' || s === 'b' || s === 'bn' || s === 'bnb'
-  }, [searchQuery])
+    return chainId && chainId <= 4 && s === '' || s === 'e' || s === 'et' || s === 'eth'
+  }, [searchQuery, chainId])
 
   const tokenComparator = useTokenComparator(invertSearchOrder)
 
@@ -121,6 +126,8 @@ export function CurrencySearch({
       if (e.key === 'Enter') {
         const s = searchQuery.toLowerCase().trim()
         if (s === 'bnb') {
+          handleCurrencySelect(BNB)
+        } else if (s === 'eth') {
           handleCurrencySelect(ETHER)
         } else if (filteredSortedTokens.length > 0) {
           if (
@@ -177,6 +184,7 @@ export function CurrencySearch({
           {({ height }) => (
             <CurrencyList
               height={height}
+              showBNB={showBNB}
               showETH={showETH}
               currencies={filteredSortedTokens}
               onCurrencySelect={handleCurrencySelect}

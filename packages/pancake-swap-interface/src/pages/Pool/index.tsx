@@ -22,7 +22,7 @@ import AppBody from '../AppBody'
 
 export default function Pool() {
   const theme = useContext(ThemeContext)
-  const { account } = useActiveWeb3React()
+  const { account, chainId } = useActiveWeb3React()
   const TranslateString = useI18n()
 
   // fetch the user's balances of all tracked V2 LP tokens
@@ -62,7 +62,7 @@ export default function Pool() {
           title={TranslateString(262, 'Liquidity')}
           description={TranslateString(1168, 'Add liquidity to receive LP tokens')}
         >
-          <Button id="join-pool-button" as={Link} to="/add/BNB">
+          <Button id="join-pool-button" as={Link} to={`/add/${chainId && chainId > 4 ? 'BNB' : 'ETH'}`}>
             {TranslateString(168, 'Add Liquidity')}
           </Button>
         </PageHeader>

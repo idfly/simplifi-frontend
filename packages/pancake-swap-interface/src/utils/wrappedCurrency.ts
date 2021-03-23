@@ -1,8 +1,18 @@
-import { ChainId, Currency, CurrencyAmount, ETHER, Token, TokenAmount, WETH } from '@pancakeswap-libs/sdk'
+import {
+  ChainId,
+  Currency,
+  CurrencyAmount,
+  BNB,
+  Token,
+  TokenAmount,
+  WETH,
+  ETHER
+} from '@pancakeswap-libs/sdk'
 
 export function wrappedCurrency(currency: Currency | undefined, chainId: ChainId | undefined): Token | undefined {
   // eslint-disable-next-line no-nested-ternary
-  return chainId && currency === ETHER ? WETH[chainId] : currency instanceof Token ? currency : undefined
+  return chainId && (currency === BNB || currency === ETHER) ?
+      WETH[chainId] : currency instanceof Token ? currency : undefined
 }
 
 export function wrappedCurrencyAmount(
@@ -14,6 +24,8 @@ export function wrappedCurrencyAmount(
 }
 
 export function unwrappedToken(token: Token): Currency {
-  if (token.equals(WETH[token.chainId])) return ETHER
+  const MAX_ETHER_CHAIN_ID = 4 // rinkeby
+  if (token.chainId > MAX_ETHER_CHAIN_ID && token.equals(WETH[token.chainId])) return BNB
+  if (token.chainId <= MAX_ETHER_CHAIN_ID && token.equals(WETH[token.chainId])) return ETHER
   return token
 }

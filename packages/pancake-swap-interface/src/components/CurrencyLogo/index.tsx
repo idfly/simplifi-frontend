@@ -1,4 +1,4 @@
-import { Currency, ETHER, Token } from '@pancakeswap-libs/sdk'
+import {Currency, BNB, Token, ETHER} from '@pancakeswap-libs/sdk'
 import React, { useMemo } from 'react'
 import styled from 'styled-components'
 import useHttpLocations from '../../hooks/useHttpLocations'
@@ -33,6 +33,7 @@ export default function CurrencyLogo({
   const uriLocations = useHttpLocations(currency instanceof WrappedTokenInfo ? currency.logoURI : undefined)
 
   const srcs: string[] = useMemo(() => {
+    if (currency === BNB) return []
     if (currency === ETHER) return []
 
     if (currency instanceof Token) {
@@ -45,8 +46,11 @@ export default function CurrencyLogo({
     return []
   }, [currency, uriLocations])
 
-  if (currency === ETHER) {
+  if (currency === BNB) {
     return <StyledBnbLogo src="/images/coins/bnb.png" size={size} style={style} />
+  }
+  if (currency === ETHER) {
+    return <StyledBnbLogo src="/images/coins/eth.png" size={size} style={style} />
   }
 
   return (currency as any)?.symbol ? (

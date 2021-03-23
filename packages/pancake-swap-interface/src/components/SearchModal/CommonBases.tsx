@@ -1,6 +1,6 @@
 import React from 'react'
 import { Text } from '@pancakeswap-libs/uikit'
-import { ChainId, Currency, currencyEquals, ETHER, Token } from '@pancakeswap-libs/sdk'
+import { ChainId, Currency, currencyEquals, BNB, Token } from '@pancakeswap-libs/sdk'
 import styled from 'styled-components'
 
 import useI18n from 'hooks/useI18n'
@@ -45,13 +45,13 @@ export default function CommonBases({
       <AutoRow gap="4px">
         <BaseWrapper
           onClick={() => {
-            if (!selectedCurrency || !currencyEquals(selectedCurrency, ETHER)) {
-              onSelect(ETHER)
+            if (!selectedCurrency || !currencyEquals(selectedCurrency, BNB)) {
+              onSelect(BNB)
             }
           }}
-          disable={selectedCurrency === ETHER}
+          disable={selectedCurrency === BNB}
         >
-          <CurrencyLogo currency={ETHER} style={{ marginRight: 8 }} />
+          <CurrencyLogo currency={BNB} style={{ marginRight: 8 }} />
           <Text>BNB</Text>
         </BaseWrapper>
         {(chainId ? SUGGESTED_BASES[chainId] : []).map((token: Token) => {
