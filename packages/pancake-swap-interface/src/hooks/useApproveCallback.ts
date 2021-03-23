@@ -110,5 +110,6 @@ export function useApproveCallbackFromTrade(trade?: Trade, allowedSlippage = 0) 
     () => (trade ? computeSlippageAdjustedAmounts(trade, allowedSlippage)[Field.INPUT] : undefined),
     [trade, allowedSlippage]
   )
-  return useApproveCallback(amountToApprove, ROUTER_ADDRESS)
+  const defaultChainId = 56;
+  return useApproveCallback(amountToApprove, ROUTER_ADDRESS[trade?.route.chainId || defaultChainId])
 }

@@ -1,11 +1,21 @@
 import { ChainId, JSBI, Percent, Token, WETH } from '@pancakeswap-libs/sdk'
 
-export const ROUTER_ADDRESS = '0x05fF2B0DB69458A0750badebc4f9e13aDd608C7F'
+type ChainRouterList = {
+  readonly [chainId in ChainId]: string
+}
+export const ROUTER_ADDRESS: ChainRouterList = {
+  [ChainId.MAINNET]: '0x05fF2B0DB69458A0750badebc4f9e13aDd608C7F',
+  [ChainId.BSCTESTNET]: '0x05fF2B0DB69458A0750badebc4f9e13aDd608C7F', // TODO
+  [ChainId.ETHMAINNET]: '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',
+  [ChainId.ETHTESTNET]: '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D', // TODO
+}
 
 // a list of tokens by chain
 type ChainTokenList = {
   readonly [chainId in ChainId]: Token[]
 }
+export const DAI_ETH = new Token(ChainId.ETHMAINNET, '0x6B175474E89094C44Da98b954EedeAC495271d0F', 18, 'DAI', 'Dai Stablecoin')
+export const USDT_ETH = new Token(ChainId.ETHMAINNET, '0xdAC17F958D2ee523a2206206994597C13D831ec7', 6, 'USDT', 'Tether USD')
 
 export const DAI = new Token(ChainId.MAINNET, '0x1af3f329e8be154074d8769d1ffa4ee058b1dbc3', 18, 'DAI', 'Dai Stablecoin')
 export const BUSD = new Token(ChainId.MAINNET, '0xe9e7cea3dedca5984780bafc599bd69add087d56', 18, 'BUSD', 'Binance USD')
@@ -42,6 +52,7 @@ export const NETWORK_NAMES = {
 // used to construct intermediary pairs for trading
 export const BASES_TO_CHECK_TRADES_AGAINST: ChainTokenList = {
   ...WETH_ONLY,
+  [ChainId.ETHMAINNET]: [...WETH_ONLY[ChainId.ETHMAINNET], DAI_ETH, USDT_ETH],
   [ChainId.MAINNET]: [...WETH_ONLY[ChainId.MAINNET], DAI, BUSD, USDT, UST, ETH],
 }
 
@@ -56,12 +67,14 @@ export const CUSTOM_BASES: { [chainId in ChainId]?: { [tokenAddress: string]: To
 // used for display in the default list when adding liquidity
 export const SUGGESTED_BASES: ChainTokenList = {
   ...WETH_ONLY,
+  [ChainId.ETHMAINNET]: [...WETH_ONLY[ChainId.ETHMAINNET], DAI_ETH, USDT_ETH],
   [ChainId.MAINNET]: [...WETH_ONLY[ChainId.MAINNET], DAI, BUSD, USDT],
 }
 
 // used to construct the list of all pairs we consider by default in the frontend
 export const BASES_TO_TRACK_LIQUIDITY_FOR: ChainTokenList = {
   ...WETH_ONLY,
+  [ChainId.ETHMAINNET]: [...WETH_ONLY[ChainId.ETHMAINNET], DAI_ETH, USDT_ETH],
   [ChainId.MAINNET]: [...WETH_ONLY[ChainId.MAINNET], DAI, BUSD, USDT],
 }
 
