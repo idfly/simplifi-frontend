@@ -1,7 +1,10 @@
 import { getVersionUpgrade, minVersionBump, VersionUpgrade } from '@uniswap/token-lists'
 import { useCallback, useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { useActiveWeb3React } from '../../hooks'
+// eslint-disable-next-line import/no-unresolved
+import {Web3ReactContextInterface} from "@web3-react/core/dist/types";
+import {Web3Provider} from "@ethersproject/providers";
+import {useFirstWeb3React, useSecondWeb3React} from '../../hooks'
 import { useFetchListCallback } from '../../hooks/useFetchListCallback'
 import useInterval from '../../hooks/useInterval'
 import useIsWindowVisible from '../../hooks/useIsWindowVisible'
@@ -9,14 +12,15 @@ import { addPopup } from '../application/actions'
 import { AppDispatch, AppState } from '../index'
 import { acceptListUpdate } from './actions'
 
-export default function Updater(): null {
-  const { library } = useActiveWeb3React()
+
+export function Updater(connection: Web3ReactContextInterface<Web3Provider>): null {
+  const { library } = connection
   const dispatch = useDispatch<AppDispatch>()
   const lists = useSelector<AppState, AppState['lists']['byUrl']>((state) => state.lists.byUrl)
 
   const isWindowVisible = useIsWindowVisible()
 
-  const fetchList = useFetchListCallback()
+  const fetchList = useFetchListCallback(connection)
 
   const fetchAllListsCallback = useCallback(() => {
     if (!isWindowVisible) return
@@ -94,5 +98,11 @@ export default function Updater(): null {
     })
   }, [dispatch, lists])
 
+  return null
+}
+
+export default function Updaters(): null {
+  Updater(useFirstWeb3React())
+  Updater(useSecondWeb3React())
   return null
 }

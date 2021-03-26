@@ -22,7 +22,7 @@ import { MinimalPositionCard } from 'components/PositionCard'
 import Row, { RowBetween, RowFlat } from 'components/Row'
 
 import { PairState } from 'data/Reserves'
-import { useActiveWeb3React } from 'hooks'
+import {useFirstWeb3React, useSecondWeb3React} from 'hooks'
 import { useCurrency } from 'hooks/Tokens'
 import { ApprovalState, useApproveCallback } from 'hooks/useApproveCallback'
 import { Field } from 'state/mint/actions'
@@ -49,9 +49,13 @@ export default function AddLiquidity({
   },
   history,
 }: RouteComponentProps<{ currencyIdA?: string; currencyIdB?: string }>) {
-  const { account, chainId, library } = useActiveWeb3React()
-  const currencyA = useCurrency(currencyIdA)
-  const currencyB = useCurrency(currencyIdB)
+  const connection1 = useFirstWeb3React()
+  const connection2 = useSecondWeb3React()
+
+  const { account, chainId, library } = connection1
+
+  const currencyA = useCurrency(connection1, currencyIdA)
+  const currencyB = useCurrency(connection2, currencyIdB)
   const TranslateString = useI18n()
 
   const oneCurrencyIsWBNB = Boolean(
@@ -75,7 +79,7 @@ export default function AddLiquidity({
     liquidityMinted,
     poolTokenPercentage,
     error,
-  } = useDerivedMintInfo(currencyA ?? undefined, currencyB ?? undefined)
+  } = useDerivedMintInfo(connection1, currencyA ?? undefined, currencyB ?? undefined)
   const { onFieldAInput, onFieldBInput } = useMintActionHandlers(noLiquidity)
 
   const isValid = !error
@@ -118,10 +122,10 @@ export default function AddLiquidity({
 
   const defaultChainId = 56;
   // check whether the user has approved the router on the tokens
-  const [approvalA, approveACallback] = useApproveCallback(parsedAmounts[Field.CURRENCY_A], ROUTER_ADDRESS[chainId || defaultChainId])
-  const [approvalB, approveBCallback] = useApproveCallback(parsedAmounts[Field.CURRENCY_B], ROUTER_ADDRESS[chainId || defaultChainId])
+  const [approvalA, approveACallback] = useApproveCallback(connection1, parsedAmounts[Field.CURRENCY_A], ROUTER_ADDRESS[chainId || defaultChainId])
+  const [approvalB, approveBCallback] = useApproveCallback(connection2, parsedAmounts[Field.CURRENCY_B], ROUTER_ADDRESS[chainId || defaultChainId])
 
-  const addTransaction = useTransactionAdder()
+  const addTransaction = useTransactionAdder(connection1)
 
   async function onAdd() {
     if (!chainId || !library || !account) return
@@ -348,6 +352,7 @@ export default function AddLiquidity({
                 currency={currencies[Field.CURRENCY_A]}
                 id="add-liquidity-input-tokena"
                 showCommonBases={false}
+                connection={connection1}
               />
               <ColumnCenter>
                 <AddIcon color="textSubtle" />
@@ -363,6 +368,7 @@ export default function AddLiquidity({
                 currency={currencies[Field.CURRENCY_B]}
                 id="add-liquidity-input-tokenb"
                 showCommonBases={false}
+                connection={connection2}
               />
               {currencies[Field.CURRENCY_A] && currencies[Field.CURRENCY_B] && pairState !== PairState.INVALID && (
                 <div>
@@ -451,7 +457,7 @@ export default function AddLiquidity({
       </AppBody>
       {pair && !noLiquidity && pairState !== PairState.INVALID ? (
         <AutoColumn style={{ minWidth: '20rem', marginTop: '1rem' }}>
-          <MinimalPositionCard showUnwrapped={oneCurrencyIsWBNB} pair={pair} />
+          <MinimalPositionCard connection={connection1} showUnwrapped={oneCurrencyIsWBNB} pair={pair} />
         </AutoColumn>
       ) : null}
     </>

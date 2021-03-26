@@ -19,7 +19,7 @@ import SyrupWarningModal from 'components/SyrupWarningModal'
 import ProgressSteps from 'components/ProgressSteps'
 
 import { INITIAL_ALLOWED_SLIPPAGE } from 'constants/index'
-import { useActiveWeb3React } from 'hooks'
+import {useFirstWeb3React, useSecondWeb3React} from 'hooks'
 import { useCurrency } from 'hooks/Tokens'
 import { ApprovalState, useApproveCallbackFromTrade } from 'hooks/useApproveCallback'
 import { useSwapCallback } from 'hooks/useSwapCallback'
@@ -37,13 +37,16 @@ import ConnectWalletButton from 'components/ConnectWalletButton'
 import AppBody from '../AppBody'
 
 const Swap = () => {
-  const loadedUrlParams = useDefaultsFromURLSearch()
+  const connection1 = useFirstWeb3React()
+  const connection2 = useSecondWeb3React()
+
+  const loadedUrlParams = useDefaultsFromURLSearch(connection1)
   const TranslateString = useI18n()
 
   // token warning stuff
   const [loadedInputCurrency, loadedOutputCurrency] = [
-    useCurrency(loadedUrlParams?.inputCurrencyId),
-    useCurrency(loadedUrlParams?.outputCurrencyId),
+    useCurrency(connection1, loadedUrlParams?.inputCurrencyId),
+    useCurrency(connection2, loadedUrlParams?.outputCurrencyId),
   ]
   const [dismissTokenWarning, setDismissTokenWarning] = useState<boolean>(false)
   const [isSyrup, setIsSyrup] = useState<boolean>(false)
@@ -61,7 +64,6 @@ const Swap = () => {
     setSyrupTransactionType('')
   }, [])
 
-  const { account } = useActiveWeb3React()
   const theme = useContext(ThemeContext)
 
   const [isExpertMode] = useExpertModeManager()
@@ -72,8 +74,13 @@ const Swap = () => {
 
   // swap state
   const { independentField, typedValue, recipient } = useSwapState()
-  const { v2Trade, currencyBalances, parsedAmount, currencies, inputError: swapInputError } = useDerivedSwapInfo()
+  const {
+    v2Trade, currencyBalances,
+    parsedAmount,
+    currencies, inputError: swapInputError
+  } = useDerivedSwapInfo(connection2)
   const { wrapType, execute: onWrap, inputError: wrapInputError } = useWrapCallback(
+    connection1,
     currencies[Field.INPUT],
     currencies[Field.OUTPUT],
     typedValue
@@ -137,7 +144,7 @@ const Swap = () => {
   const noRoute = !route
 
   // check whether the user has approved the router on the input token
-  const [approval, approveCallback] = useApproveCallbackFromTrade(trade, allowedSlippage)
+  const [approval, approveCallback] = useApproveCallbackFromTrade(connection1, trade, allowedSlippage)
 
   // check if user has gone through approval process, used to show two step buttons, reset on token change
   const [approvalSubmitted, setApprovalSubmitted] = useState<boolean>(false)
@@ -154,6 +161,7 @@ const Swap = () => {
 
   // the callback to execute the swap
   const { callback: swapCallback, error: swapCallbackError } = useSwapCallback(
+    connection1,
     trade,
     allowedSlippage,
     deadline,
@@ -285,6 +293,7 @@ const Swap = () => {
             onDismiss={handleConfirmDismiss}
           />
           <PageHeader
+            connection={connection1}
             title={TranslateString(8, 'Exchange')}
             description={TranslateString(1192, 'Trade tokens in an instant')}
           />
@@ -304,6 +313,7 @@ const Swap = () => {
                 onCurrencySelect={handleInputSelect}
                 otherCurrency={currencies[Field.OUTPUT]}
                 id="swap-currency-input"
+                connection={connection1}
               />
               <AutoColumn justify="space-between">
                 <AutoRow justify={isExpertMode ? 'space-between' : 'center'} style={{ padding: '0 1rem' }}>
@@ -311,8 +321,8 @@ const Swap = () => {
                     <IconButton
                       variant="tertiary"
                       onClick={() => {
-                        setApprovalSubmitted(false) // reset 2 step UI for approvals
-                        onSwitchTokens()
+                        // setApprovalSubmitted(false) // reset 2 step UI for approvals
+                        // onSwitchTokens()
                       }}
                       style={{ borderRadius: '50%' }}
                       scale="sm"
@@ -340,6 +350,7 @@ const Swap = () => {
                 onCurrencySelect={handleOutputSelect}
                 otherCurrency={currencies[Field.INPUT]}
                 id="swap-currency-output"
+                connection={connection2}
               />
 
               {recipient !== null && !showWrap ? (
@@ -352,7 +363,7 @@ const Swap = () => {
                       - Remove send
                     </LinkStyledButton>
                   </AutoRow>
-                  <AddressInputPanel id="recipient" value={recipient} onChange={onChangeRecipient} />
+                  <AddressInputPanel connection={connection1} id="recipient" value={recipient} onChange={onChangeRecipient} />
                 </>
               ) : null}
 
@@ -380,7 +391,7 @@ const Swap = () => {
               )}
             </AutoColumn>
             <BottomGrouping>
-              {!account ? (
+              {!connection1.account ? (
                 <ConnectWalletButton width="100%" />
               ) : showWrap ? (
                 <Button disabled={Boolean(wrapInputError)} onClick={onWrap} width="100%">

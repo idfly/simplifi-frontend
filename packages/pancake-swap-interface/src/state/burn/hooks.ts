@@ -1,10 +1,12 @@
 import { Currency, CurrencyAmount, JSBI, Pair, Percent, TokenAmount } from '@pancakeswap-libs/sdk'
 import { useCallback } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
+// eslint-disable-next-line import/no-unresolved
+import {Web3ReactContextInterface} from "@web3-react/core/dist/types";
+import {Web3Provider} from "@ethersproject/providers";
 import { usePair } from '../../data/Reserves'
 import { useTotalSupply } from '../../data/TotalSupply'
 
-import { useActiveWeb3React } from '../../hooks'
 import { wrappedCurrency } from '../../utils/wrappedCurrency'
 import { AppDispatch, AppState } from '../index'
 import { tryParseAmount } from '../swap/hooks'
@@ -16,6 +18,7 @@ export function useBurnState(): AppState['burn'] {
 }
 
 export function useDerivedBurnInfo(
+  connection: Web3ReactContextInterface<Web3Provider>,
   currencyA: Currency | undefined,
   currencyB: Currency | undefined
 ): {
@@ -28,15 +31,15 @@ export function useDerivedBurnInfo(
   }
   error?: string
 } {
-  const { account, chainId } = useActiveWeb3React()
+  const { account, chainId } = connection
 
   const { independentField, typedValue } = useBurnState()
 
   // pair + totalsupply
-  const [, pair] = usePair(currencyA, currencyB)
+  const [, pair] = usePair(connection, currencyA, currencyB)
 
   // balances
-  const relevantTokenBalances = useTokenBalances(account ?? undefined, [pair?.liquidityToken])
+  const relevantTokenBalances = useTokenBalances(connection, account ?? undefined, [pair?.liquidityToken])
   const userLiquidity: undefined | TokenAmount = relevantTokenBalances?.[pair?.liquidityToken?.address ?? '']
 
   const [tokenA, tokenB] = [wrappedCurrency(currencyA, chainId), wrappedCurrency(currencyB, chainId)]
@@ -47,7 +50,7 @@ export function useDerivedBurnInfo(
   }
 
   // liquidity values
-  const totalSupply = useTotalSupply(pair?.liquidityToken)
+  const totalSupply = useTotalSupply(connection, pair?.liquidityToken)
   const liquidityValueA =
     pair &&
     totalSupply &&

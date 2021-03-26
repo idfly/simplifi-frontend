@@ -1,9 +1,12 @@
 import { useEffect } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { useActiveWeb3React } from '../../hooks'
+// eslint-disable-next-line import/no-unresolved
+import {Web3ReactContextInterface} from "@web3-react/core/dist/types";
+import {Web3Provider} from "@ethersproject/providers";
 import { useAddPopup, useBlockNumber } from '../application/hooks'
 import { AppDispatch, AppState } from '../index'
 import { checkedTransaction, finalizeTransaction } from './actions'
+import {useFirstWeb3React, useSecondWeb3React} from "../../hooks";
 
 export function shouldCheck(
   lastBlockNumber: number,
@@ -26,10 +29,11 @@ export function shouldCheck(
   return true
 }
 
-export default function Updater(): null {
-  const { chainId, library } = useActiveWeb3React()
 
-  const lastBlockNumber = useBlockNumber()
+export function Updater(connection: Web3ReactContextInterface<Web3Provider>): null {
+  const { chainId, library } = connection
+
+  const lastBlockNumber = useBlockNumber(connection)
 
   const dispatch = useDispatch<AppDispatch>()
   const state = useSelector<AppState, AppState['transactions']>((s) => s.transactions)
@@ -88,4 +92,10 @@ export default function Updater(): null {
   }, [chainId, library, transactions, lastBlockNumber, dispatch, addPopup])
 
   return null
+}
+
+export default function Updaters(): null {
+  Updater(useFirstWeb3React())
+  Updater(useSecondWeb3React())
+  return null;
 }

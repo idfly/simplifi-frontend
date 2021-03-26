@@ -5,6 +5,7 @@ import { FlexProps } from "./types";
 
 const Flex = styled(Box)<FlexProps>`
   display: flex;
+  margin: 0 auto;
   ${flexbox}
 `;
 

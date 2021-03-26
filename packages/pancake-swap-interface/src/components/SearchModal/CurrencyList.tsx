@@ -10,7 +10,9 @@ import React, { CSSProperties, MutableRefObject, useCallback, useMemo } from 're
 import { FixedSizeList } from 'react-window'
 import styled from 'styled-components'
 import { Text } from '@pancakeswap-libs/uikit'
-import { useActiveWeb3React } from '../../hooks'
+// eslint-disable-next-line import/no-unresolved
+import {Web3ReactContextInterface} from "@web3-react/core/dist/types";
+import {Web3Provider} from "@ethersproject/providers";
 import { useSelectedTokenList, WrappedTokenInfo } from '../../state/lists/hooks'
 import { useAddUserToken, useRemoveUserAddedToken } from '../../state/user/hooks'
 import { useCurrencyBalance } from '../../state/wallet/hooks'
@@ -93,19 +95,21 @@ function CurrencyRow({
   isSelected,
   otherSelected,
   style,
+  connection
 }: {
   currency: Currency
   onSelect: () => void
   isSelected: boolean
   otherSelected: boolean
   style: CSSProperties
+  connection: Web3ReactContextInterface<Web3Provider>
 }) {
-  const { account, chainId } = useActiveWeb3React()
+  const { account, chainId } = connection
   const key = currencyKey(currency)
   const selectedTokenList = useSelectedTokenList()
   const isOnSelectedList = isTokenOnList(selectedTokenList, currency)
-  const customAdded = useIsUserAddedToken(currency)
-  const balance = useCurrencyBalance(account ?? undefined, currency)
+  const customAdded = useIsUserAddedToken(connection, currency)
+  const balance = useCurrencyBalance(connection, account ?? undefined, currency)
 
   const removeToken = useRemoveUserAddedToken()
   const addToken = useAddUserToken()
@@ -168,6 +172,7 @@ export default function CurrencyList({
   fixedListRef,
   showBNB,
   showETH,
+  connection
 }: {
   height: number
   currencies: Currency[]
@@ -177,11 +182,12 @@ export default function CurrencyList({
   fixedListRef?: MutableRefObject<FixedSizeList | undefined>
   showBNB: boolean
   showETH: boolean
+  connection: Web3ReactContextInterface<Web3Provider>
 }) {
   const itemData = useMemo(() => {
         let list = [...currencies];
         if (showBNB) {
-          list = [Currency.BNB, ...currencies]
+          list = [Currency.BNB, ...list]
         }
         if (showETH) {
           list = [Currency.ETHER, ...list]
@@ -204,10 +210,11 @@ export default function CurrencyList({
           isSelected={isSelected}
           onSelect={handleSelect}
           otherSelected={otherSelected}
+          connection={connection}
         />
       )
     },
-    [onCurrencySelect, otherCurrency, selectedCurrency]
+    [onCurrencySelect, otherCurrency, selectedCurrency, connection]
   )
 
   const itemKey = useCallback((index: number, data: any) => currencyKey(data[index]), [])

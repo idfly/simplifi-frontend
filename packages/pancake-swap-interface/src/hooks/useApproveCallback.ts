@@ -1,5 +1,5 @@
 import { MaxUint256 } from '@ethersproject/constants'
-import { TransactionResponse } from '@ethersproject/providers'
+import { TransactionResponse, Web3Provider } from '@ethersproject/providers'
 import {
   Trade,
   TokenAmount,
@@ -8,6 +8,8 @@ import {
   ETHER
 } from '@pancakeswap-libs/sdk'
 import { useCallback, useMemo } from 'react'
+// eslint-disable-next-line import/no-unresolved
+import {Web3ReactContextInterface} from "@web3-react/core/dist/types";
 import { ROUTER_ADDRESS } from '../constants'
 import { useTokenAllowance } from '../data/Allowances'
 import { Field } from '../state/swap/actions'
@@ -15,7 +17,6 @@ import { useTransactionAdder, useHasPendingApproval } from '../state/transaction
 import { computeSlippageAdjustedAmounts } from '../utils/prices'
 import { calculateGasMargin } from '../utils'
 import { useTokenContract } from './useContract'
-import { useActiveWeb3React } from './index'
 
 export enum ApprovalState {
   UNKNOWN,
@@ -26,13 +27,14 @@ export enum ApprovalState {
 
 // returns a variable indicating the state of the approval and a function which approves if necessary or early returns
 export function useApproveCallback(
+  connection: Web3ReactContextInterface<Web3Provider>,
   amountToApprove?: CurrencyAmount,
   spender?: string
 ): [ApprovalState, () => Promise<void>] {
-  const { account } = useActiveWeb3React()
+  const { account } = connection
   const token = amountToApprove instanceof TokenAmount ? amountToApprove.token : undefined
-  const currentAllowance = useTokenAllowance(token, account ?? undefined, spender)
-  const pendingApproval = useHasPendingApproval(token?.address, spender)
+  const currentAllowance = useTokenAllowance(connection, token, account ?? undefined, spender)
+  const pendingApproval = useHasPendingApproval(connection, token?.address, spender)
 
   // check the current approval status
   const approvalState: ApprovalState = useMemo(() => {
@@ -49,8 +51,8 @@ export function useApproveCallback(
       : ApprovalState.APPROVED
   }, [amountToApprove, currentAllowance, pendingApproval, spender])
 
-  const tokenContract = useTokenContract(token?.address)
-  const addTransaction = useTransactionAdder()
+  const tokenContract = useTokenContract(connection, token?.address)
+  const addTransaction = useTransactionAdder(connection)
 
   const approve = useCallback(async (): Promise<void> => {
     if (approvalState !== ApprovalState.NOT_APPROVED) {
@@ -105,11 +107,11 @@ export function useApproveCallback(
 }
 
 // wraps useApproveCallback in the context of a swap
-export function useApproveCallbackFromTrade(trade?: Trade, allowedSlippage = 0) {
+export function useApproveCallbackFromTrade(connection: Web3ReactContextInterface<Web3Provider>, trade?: Trade, allowedSlippage = 0) {
   const amountToApprove = useMemo(
     () => (trade ? computeSlippageAdjustedAmounts(trade, allowedSlippage)[Field.INPUT] : undefined),
     [trade, allowedSlippage]
   )
   const defaultChainId = 56;
-  return useApproveCallback(amountToApprove, ROUTER_ADDRESS[trade?.route.chainId || defaultChainId])
+  return useApproveCallback(connection, amountToApprove, ROUTER_ADDRESS[trade?.route.chainId || defaultChainId])
 }

@@ -9,7 +9,7 @@ import { FindPoolTabs } from 'components/NavigationTabs'
 import { MinimalPositionCard } from 'components/PositionCard'
 import CurrencySearchModal from 'components/SearchModal/CurrencySearchModal'
 import { PairState, usePair } from 'data/Reserves'
-import { useActiveWeb3React } from 'hooks'
+import { useFirstWeb3React } from 'hooks'
 import { usePairAdder } from 'state/user/hooks'
 import { useTokenBalance } from 'state/wallet/hooks'
 import { StyledInternalLink } from 'components/Shared'
@@ -24,7 +24,8 @@ enum Fields {
 }
 
 export default function PoolFinder() {
-  const { account } = useActiveWeb3React()
+  const connection1 = useFirstWeb3React()
+  const { account } = connection1
 
   const [showSearch, setShowSearch] = useState<boolean>(false)
   const [activeField, setActiveField] = useState<number>(Fields.TOKEN1)
@@ -32,7 +33,7 @@ export default function PoolFinder() {
   const [currency0, setCurrency0] = useState<Currency | null>(BNB)
   const [currency1, setCurrency1] = useState<Currency | null>(null)
 
-  const [pairState, pair] = usePair(currency0 ?? undefined, currency1 ?? undefined)
+  const [pairState, pair] = usePair(connection1, currency0 ?? undefined, currency1 ?? undefined)
   const addPair = usePairAdder()
 
   const TranslateString = useI18n()
@@ -51,7 +52,7 @@ export default function PoolFinder() {
         JSBI.equal(pair.reserve1.raw, JSBI.BigInt(0))
     )
 
-  const position: TokenAmount | undefined = useTokenBalance(account ?? undefined, pair?.liquidityToken)
+  const position: TokenAmount | undefined = useTokenBalance(connection1, account ?? undefined, pair?.liquidityToken)
   const hasPosition = Boolean(position && JSBI.greaterThan(position.raw, JSBI.BigInt(0)))
 
   const handleCurrencySelect = useCallback(
@@ -125,7 +126,7 @@ export default function PoolFinder() {
             {currency0 && currency1 ? (
               pairState === PairState.EXISTS ? (
                 hasPosition && pair ? (
-                  <MinimalPositionCard pair={pair} />
+                  <MinimalPositionCard connection={connection1} pair={pair} />
                 ) : (
                   <LightCard padding="45px 10px">
                     <AutoColumn gap="sm" justify="center">
@@ -174,6 +175,7 @@ export default function PoolFinder() {
             onDismiss={handleSearchDismiss}
             showCommonBases
             selectedCurrency={(activeField === Fields.TOKEN0 ? currency1 : currency0) ?? undefined}
+            connection={connection1}
           />
         </CardBody>
       </AppBody>

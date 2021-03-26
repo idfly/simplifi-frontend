@@ -1,12 +1,16 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useDispatch } from 'react-redux'
-import { useActiveWeb3React } from '../../hooks'
+// eslint-disable-next-line import/no-unresolved
+import {Web3ReactContextInterface} from "@web3-react/core/dist/types";
+import {Web3Provider} from "@ethersproject/providers";
 import useDebounce from '../../hooks/useDebounce'
 import useIsWindowVisible from '../../hooks/useIsWindowVisible'
 import { updateBlockNumber } from './actions'
+import {useFirstWeb3React, useSecondWeb3React} from "../../hooks";
 
-export default function Updater(): null {
-  const { library, chainId } = useActiveWeb3React()
+
+export function Updater(connection: Web3ReactContextInterface<Web3Provider>): null {
+  const { library, chainId } = connection
   const dispatch = useDispatch()
 
   const windowVisible = useIsWindowVisible()
@@ -53,5 +57,11 @@ export default function Updater(): null {
     dispatch(updateBlockNumber({ chainId: debouncedState.chainId, blockNumber: debouncedState.blockNumber }))
   }, [windowVisible, dispatch, debouncedState.blockNumber, debouncedState.chainId])
 
+  return null
+}
+
+export default function Updaters(): null {
+  Updater(useFirstWeb3React())
+  Updater(useSecondWeb3React())
   return null
 }

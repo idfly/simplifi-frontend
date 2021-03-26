@@ -24,8 +24,6 @@ const StyledNav = styled.nav<{ showMenu: boolean }>`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding-left: 8px;
-  padding-right: 16px;
   width: 100%;
   height: ${MENU_HEIGHT}px;
   background-color: ${({ theme }) => theme.nav.background};
@@ -39,17 +37,19 @@ const BodyWrapper = styled.div`
   display: flex;
 `;
 
+const FromTo = styled.span`    
+  line-height: 31px;
+  padding: 0 8px;
+  font-weight: 500;
+  color: #1FC7D4;
+`;
+
 const Inner = styled.div<{ isPushed: boolean; showMenu: boolean }>`
   flex-grow: 1;
   margin-top: ${({ showMenu }) => (showMenu ? `${MENU_HEIGHT}px` : 0)};
   transition: margin-top 0.2s;
   transform: translate3d(0, 0, 0);
   max-width: 100%;
-
-  ${({ theme }) => theme.mediaQueries.nav} {
-    margin-left: ${({ isPushed }) => `${isPushed ? SIDEBAR_WIDTH_FULL : SIDEBAR_WIDTH_REDUCED}px`};
-    max-width: ${({ isPushed }) => `calc(100% - ${isPushed ? SIDEBAR_WIDTH_FULL : SIDEBAR_WIDTH_REDUCED}px)`};
-  }
 `;
 
 const MobileOnlyOverlay = styled(Overlay)`
@@ -63,9 +63,13 @@ const MobileOnlyOverlay = styled(Overlay)`
 
 const Menu: React.FC<NavProps> = ({
   account,
+  account2,
   networkName,
+  networkName2,
   login,
+  login2,
   logout,
+  logout2,
   isDark,
   toggleTheme,
   langs,
@@ -117,16 +121,13 @@ const Menu: React.FC<NavProps> = ({
   return (
     <Wrapper>
       <StyledNav showMenu={showMenu}>
-        <Logo
-          isPushed={isPushed}
-          togglePush={() => setIsPushed((prevState: boolean) => !prevState)}
-          isDark={isDark}
-          href={homeLink?.href ?? "/"}
-        />
         <Flex>
           <UserBlock account={account} login={login} logout={logout}
                      networkName={networkName} />
-          {profile && <Avatar profile={profile} />}
+          <FromTo>{'>>>'}</FromTo>
+          <UserBlock account={account2} login={login2} logout={logout2}
+                     networkName={networkName2} />
+          {/*{profile && <Avatar profile={profile} />}*/}
         </Flex>
       </StyledNav>
       <BodyWrapper>

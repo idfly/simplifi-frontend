@@ -1,11 +1,13 @@
 import { useCallback, useMemo } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
-import { useActiveWeb3React } from '../../hooks'
+// eslint-disable-next-line import/no-unresolved
+import {Web3ReactContextInterface} from "@web3-react/core/dist/types";
+import {Web3Provider} from "@ethersproject/providers";
 import { addPopup, PopupContent, removePopup, toggleWalletModal, toggleSettingsMenu } from './actions'
 import { AppState } from '../index'
 
-export function useBlockNumber(): number | undefined {
-  const { chainId } = useActiveWeb3React()
+export function useBlockNumber(connection: Web3ReactContextInterface<Web3Provider>): number | undefined {
+  const { chainId } = connection
 
   return useSelector((state: AppState) => state.application.blockNumber[chainId ?? -1])
 }

@@ -5,9 +5,11 @@ import { darken } from 'polished'
 import { ChevronDown, ChevronUp } from 'react-feather'
 import { Link } from 'react-router-dom'
 import styled from 'styled-components'
+// eslint-disable-next-line import/no-unresolved
+import {Web3ReactContextInterface} from "@web3-react/core/dist/types";
+import {Web3Provider} from "@ethersproject/providers";
 import { useTotalSupply } from '../../data/TotalSupply'
 
-import { useActiveWeb3React } from '../../hooks'
 import { useTokenBalance } from '../../state/wallet/hooks'
 import { currencyId } from '../../utils/currencyId'
 import { unwrappedToken } from '../../utils/wrappedCurrency'
@@ -30,21 +32,23 @@ export const HoverCard = styled(Card)`
 `
 
 interface PositionCardProps {
+  // eslint-disable-next-line react/no-unused-prop-types
+  connection: Web3ReactContextInterface<Web3Provider>
   pair: Pair
   // eslint-disable-next-line react/no-unused-prop-types
   showUnwrapped?: boolean
 }
 
-export function MinimalPositionCard({ pair, showUnwrapped = false }: PositionCardProps) {
-  const { account } = useActiveWeb3React()
+export function MinimalPositionCard({connection, pair, showUnwrapped = false }: PositionCardProps) {
+  const { account } = connection
 
   const currency0 = showUnwrapped ? pair.token0 : unwrappedToken(pair.token0)
   const currency1 = showUnwrapped ? pair.token1 : unwrappedToken(pair.token1)
 
   const [showMore, setShowMore] = useState(false)
 
-  const userPoolBalance = useTokenBalance(account ?? undefined, pair.liquidityToken)
-  const totalPoolTokens = useTotalSupply(pair.liquidityToken)
+  const userPoolBalance = useTokenBalance(connection, account ?? undefined, pair.liquidityToken)
+  const totalPoolTokens = useTotalSupply(connection, pair.liquidityToken)
 
   const [token0Deposited, token1Deposited] =
     !!pair &&
@@ -116,16 +120,16 @@ export function MinimalPositionCard({ pair, showUnwrapped = false }: PositionCar
   )
 }
 
-export default function FullPositionCard({ pair }: PositionCardProps) {
-  const { account } = useActiveWeb3React()
+export default function FullPositionCard({connection, pair }: PositionCardProps) {
+  const { account } = connection
 
   const currency0 = unwrappedToken(pair.token0)
   const currency1 = unwrappedToken(pair.token1)
 
   const [showMore, setShowMore] = useState(false)
 
-  const userPoolBalance = useTokenBalance(account ?? undefined, pair.liquidityToken)
-  const totalPoolTokens = useTotalSupply(pair.liquidityToken)
+  const userPoolBalance = useTokenBalance(connection, account ?? undefined, pair.liquidityToken)
+  const totalPoolTokens = useTotalSupply(connection, pair.liquidityToken)
 
   const poolTokenPercentage =
     !!userPoolBalance && !!totalPoolTokens && JSBI.greaterThanOrEqual(totalPoolTokens.raw, userPoolBalance.raw)

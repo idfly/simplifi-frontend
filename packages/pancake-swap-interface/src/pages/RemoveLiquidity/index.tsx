@@ -29,7 +29,7 @@ import { RowBetween, RowFixed } from '../../components/Row'
 import Slider from '../../components/Slider'
 import CurrencyLogo from '../../components/CurrencyLogo'
 import { ROUTER_ADDRESS } from '../../constants'
-import { useActiveWeb3React } from '../../hooks'
+import {useFirstWeb3React, useSecondWeb3React} from '../../hooks'
 import { useCurrency } from '../../hooks/Tokens'
 import { usePairContract } from '../../hooks/useContract'
 
@@ -65,8 +65,13 @@ export default function RemoveLiquidity({
     params: { currencyIdA, currencyIdB },
   },
 }: RouteComponentProps<{ currencyIdA: string; currencyIdB: string }>) {
-  const [currencyA, currencyB] = [useCurrency(currencyIdA) ?? undefined, useCurrency(currencyIdB) ?? undefined]
-  const { account, chainId, library } = useActiveWeb3React()
+  const connection1 = useFirstWeb3React()
+  const connection2 = useSecondWeb3React()
+  const [currencyA, currencyB] = [
+      useCurrency(connection1, currencyIdA) ?? undefined,
+      useCurrency(connection2, currencyIdB) ?? undefined
+  ]
+  const { account, chainId, library } = connection1
   const TranslateString = useI18n()
   const [tokenA, tokenB] = useMemo(() => [wrappedCurrency(currencyA, chainId), wrappedCurrency(currencyB, chainId)], [
     currencyA,
@@ -78,7 +83,7 @@ export default function RemoveLiquidity({
 
   // burn state
   const { independentField, typedValue } = useBurnState()
-  const { pair, parsedAmounts, error } = useDerivedBurnInfo(currencyA ?? undefined, currencyB ?? undefined)
+  const { pair, parsedAmounts, error } = useDerivedBurnInfo(connection1, currencyA ?? undefined, currencyB ?? undefined)
   const { onUserInput: _onUserInput } = useBurnActionHandlers()
   const isValid = !error
 
@@ -109,12 +114,12 @@ export default function RemoveLiquidity({
   const atMaxAmount = parsedAmounts[Field.LIQUIDITY_PERCENT]?.equalTo(new Percent('1'))
 
   // pair contract
-  const pairContract: Contract | null = usePairContract(pair?.liquidityToken?.address)
+  const pairContract: Contract | null = usePairContract(connection1, pair?.liquidityToken?.address)
 
   // allowance handling
   const [signatureData, setSignatureData] = useState<{ v: number; r: string; s: string; deadline: number } | null>(null)
   const defaultChainId = 56;
-  const [approval, approveCallback] = useApproveCallback(parsedAmounts[Field.LIQUIDITY], ROUTER_ADDRESS[chainId || defaultChainId])
+  const [approval, approveCallback] = useApproveCallback(connection1, parsedAmounts[Field.LIQUIDITY], ROUTER_ADDRESS[chainId || defaultChainId])
   async function onAttemptToApprove() {
     if (!chainId || !pairContract || !pair || !library) throw new Error('missing dependencies')
     const liquidityAmount = parsedAmounts[Field.LIQUIDITY]
@@ -193,7 +198,7 @@ export default function RemoveLiquidity({
   const onCurrencyBInput = useCallback((val: string): void => onUserInput(Field.CURRENCY_B, val), [onUserInput])
 
   // tx sending
-  const addTransaction = useTransactionAdder()
+  const addTransaction = useTransactionAdder(connection1)
   async function onRemove() {
     if (!chainId || !library || !account) throw new Error('missing dependencies')
     const { [Field.CURRENCY_A]: currencyAmountA, [Field.CURRENCY_B]: currencyAmountB } = parsedAmounts
@@ -595,6 +600,7 @@ export default function RemoveLiquidity({
                     currency={pair?.liquidityToken}
                     pair={pair}
                     id="liquidity-amount"
+                    connection={connection1}
                   />
                   <ColumnCenter>
                     <ArrowDown size="16" color={theme.colors.textSubtle} />
@@ -609,6 +615,7 @@ export default function RemoveLiquidity({
                     label="Output"
                     onCurrencySelect={handleSelectCurrencyA}
                     id="remove-liquidity-tokena"
+                    connection={connection1}
                   />
                   <ColumnCenter>
                     <Plus size="16" color={theme.colors.textSubtle} />
@@ -623,6 +630,7 @@ export default function RemoveLiquidity({
                     label="Output"
                     onCurrencySelect={handleSelectCurrencyB}
                     id="remove-liquidity-tokenb"
+                    connection={connection1}
                   />
                 </>
               )}
@@ -684,7 +692,7 @@ export default function RemoveLiquidity({
 
       {pair ? (
         <AutoColumn style={{ minWidth: '20rem', marginTop: '1rem' }}>
-          <MinimalPositionCard showUnwrapped={oneCurrencyIsWETH} pair={pair} />
+          <MinimalPositionCard connection={connection1} showUnwrapped={oneCurrencyIsWETH} pair={pair} />
         </AutoColumn>
       ) : null}
     </>

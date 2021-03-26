@@ -90,6 +90,7 @@ export const PINNED_PAIRS: { readonly [chainId in ChainId]?: [Token, Token][] } 
 }
 
 export const NetworkContextName = 'NETWORK'
+export const NetworkContextName2 = 'NETWORK2'
 
 // default allowed slippage, in bips
 export const INITIAL_ALLOWED_SLIPPAGE = 80

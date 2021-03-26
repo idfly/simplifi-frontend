@@ -50,8 +50,12 @@ export interface PanelProps {
 
 export interface NavProps extends PanelProps {
   account?: string;
+  account2?: string;
   networkName?: string;
+  networkName2?: string;
   login: Login;
+  login2: Login;
   profile?: Profile;
   logout: () => void;
+  logout2: () => void;
 }

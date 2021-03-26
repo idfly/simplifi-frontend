@@ -3,15 +3,17 @@ import { ChainId } from '@pancakeswap-libs/sdk'
 import { TokenList } from '@uniswap/token-lists'
 import { useCallback } from 'react'
 import { useDispatch } from 'react-redux'
+// eslint-disable-next-line import/no-unresolved
+import {Web3ReactContextInterface} from "@web3-react/core/dist/types";
+import {Web3Provider} from "@ethersproject/providers";
 import { getNetworkLibrary, NETWORK_CHAIN_ID } from '../connectors'
 import { AppDispatch } from '../state'
 import { fetchTokenList } from '../state/lists/actions'
 import getTokenList from '../utils/getTokenList'
 import resolveENSContentHash from '../utils/resolveENSContentHash'
-import { useActiveWeb3React } from './index'
 
-export function useFetchListCallback(): (listUrl: string) => Promise<TokenList> {
-  const { chainId, library } = useActiveWeb3React()
+export function useFetchListCallback(connection: Web3ReactContextInterface<Web3Provider>): (listUrl: string) => Promise<TokenList> {
+  const { chainId, library } = connection
   const dispatch = useDispatch<AppDispatch>()
 
   const ensResolver = useCallback(

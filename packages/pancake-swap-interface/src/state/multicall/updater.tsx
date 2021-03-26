@@ -1,7 +1,10 @@
 import { Contract } from '@ethersproject/contracts'
 import { useEffect, useMemo, useRef } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { useActiveWeb3React } from '../../hooks'
+// eslint-disable-next-line import/no-unresolved
+import {Web3ReactContextInterface} from "@web3-react/core/dist/types";
+import {Web3Provider} from "@ethersproject/providers";
+import {useFirstWeb3React, useSecondWeb3React} from '../../hooks'
 import { useMulticallContract } from '../../hooks/useContract'
 import useDebounce from '../../hooks/useDebounce'
 import chunkArray from '../../utils/chunkArray'
@@ -111,14 +114,15 @@ export function outdatedListeningKeys(
   })
 }
 
-export default function Updater(): null {
+
+export function Updater(connection: Web3ReactContextInterface<Web3Provider>): null {
   const dispatch = useDispatch<AppDispatch>()
   const state = useSelector<AppState, AppState['multicall']>((s) => s.multicall)
   // wait for listeners to settle before triggering updates
   const debouncedListeners = useDebounce(state.callListeners, 100)
-  const latestBlockNumber = useBlockNumber()
-  const { chainId } = useActiveWeb3React()
-  const multicallContract = useMulticallContract()
+  const latestBlockNumber = useBlockNumber(connection)
+  const { chainId } = connection
+  const multicallContract = useMulticallContract(connection)
   const cancellations = useRef<{ blockNumber: number; cancellations: (() => void)[] }>()
 
   const listeningKeys: { [callKey: string]: number } = useMemo(() => {
@@ -203,5 +207,11 @@ export default function Updater(): null {
     }
   }, [chainId, multicallContract, dispatch, serializedOutdatedCallKeys, latestBlockNumber])
 
+  return null
+}
+
+export default function Updaters(): null {
+  Updater(useFirstWeb3React())
+  Updater(useSecondWeb3React())
   return null
 }

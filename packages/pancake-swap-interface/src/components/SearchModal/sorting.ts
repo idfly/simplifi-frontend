@@ -1,5 +1,8 @@
 import { Token, TokenAmount } from '@pancakeswap-libs/sdk'
 import { useMemo } from 'react'
+// eslint-disable-next-line import/no-unresolved
+import {Web3ReactContextInterface} from "@web3-react/core/dist/types";
+import {Web3Provider} from "@ethersproject/providers";
 import { useAllTokenBalances } from '../../state/wallet/hooks'
 
 // compare two token amounts with highest one coming first
@@ -38,8 +41,8 @@ function getTokenComparator(balances: {
   }
 }
 
-export function useTokenComparator(inverted: boolean): (tokenA: Token, tokenB: Token) => number {
-  const balances = useAllTokenBalances()
+export function useTokenComparator(inverted: boolean, connection: Web3ReactContextInterface<Web3Provider>): (tokenA: Token, tokenB: Token) => number {
+  const balances = useAllTokenBalances(connection)
   const comparator = useMemo(() => getTokenComparator(balances ?? {}), [balances])
   return useMemo(() => {
     if (inverted) {

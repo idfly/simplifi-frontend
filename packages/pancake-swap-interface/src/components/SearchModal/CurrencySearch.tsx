@@ -7,7 +7,9 @@ import { FixedSizeList } from 'react-window'
 import { ThemeContext } from 'styled-components'
 import AutoSizer from 'react-virtualized-auto-sizer'
 import useI18n from 'hooks/useI18n'
-import { useActiveWeb3React } from '../../hooks'
+// eslint-disable-next-line import/no-unresolved
+import {Web3ReactContextInterface} from "@web3-react/core/dist/types";
+import {Web3Provider} from "@ethersproject/providers";
 import { AppState } from '../../state'
 import { useAllTokens, useToken } from '../../hooks/Tokens'
 import { useSelectedListInfo } from '../../state/lists/hooks'
@@ -33,6 +35,7 @@ interface CurrencySearchProps {
   otherSelectedCurrency?: Currency | null
   showCommonBases?: boolean
   onChangeList: () => void
+  connection: Web3ReactContextInterface<Web3Provider>
 }
 
 export function CurrencySearch({
@@ -43,19 +46,20 @@ export function CurrencySearch({
   onDismiss,
   isOpen,
   onChangeList,
+  connection
 }: CurrencySearchProps) {
   const { t } = useTranslation()
-  const { chainId } = useActiveWeb3React()
   const theme = useContext(ThemeContext)
 
   const fixedList = useRef<FixedSizeList>()
   const [searchQuery, setSearchQuery] = useState<string>('')
   const [invertSearchOrder, setInvertSearchOrder] = useState<boolean>(false)
-  const allTokens = useAllTokens()
+  const {chainId} = connection
+  const allTokens = useAllTokens(connection)
 
   // if they input an address, use it
   const isAddressSearch = isAddress(searchQuery)
-  const searchToken = useToken(searchQuery)
+  const searchToken = useToken(connection, searchQuery)
 
   const showBNB: boolean = useMemo(() => {
     const s = searchQuery.toLowerCase().trim()
@@ -67,7 +71,7 @@ export function CurrencySearch({
     return chainId && chainId <= 4 && s === '' || s === 'e' || s === 'et' || s === 'eth'
   }, [searchQuery, chainId])
 
-  const tokenComparator = useTokenComparator(invertSearchOrder)
+  const tokenComparator = useTokenComparator(invertSearchOrder, connection)
 
   const audioPlay = useSelector<AppState, AppState['user']['audioPlay']>((state) => state.user.audioPlay)
 
@@ -191,6 +195,7 @@ export function CurrencySearch({
               otherCurrency={otherSelectedCurrency}
               selectedCurrency={selectedCurrency}
               fixedListRef={fixedList}
+              connection={connection}
             />
           )}
         </AutoSizer>

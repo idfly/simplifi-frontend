@@ -8,9 +8,11 @@ import {
   ETHER
 } from '@pancakeswap-libs/sdk'
 import { useMemo } from 'react'
+// eslint-disable-next-line import/no-unresolved
+import {Web3ReactContextInterface} from "@web3-react/core/dist/types";
+import {Web3Provider} from "@ethersproject/providers";
 import ERC20_INTERFACE from '../../constants/abis/erc20'
 import { useAllTokens } from '../../hooks/Tokens'
-import { useActiveWeb3React } from '../../hooks'
 import { useMulticallContract } from '../../hooks/useContract'
 import { isAddress } from '../../utils'
 import { useSingleContractMultipleData, useMultipleContractSingleData } from '../multicall/hooks'
@@ -19,9 +21,10 @@ import { useSingleContractMultipleData, useMultipleContractSingleData } from '..
  * Returns a map of the given addresses to their eventually consistent ETH balances.
  */
 export function useETHBalances(
+  connection: Web3ReactContextInterface<Web3Provider>,
   uncheckedAddresses?: (string | undefined)[]
 ): { [address: string]: CurrencyAmount | undefined } {
-  const multicallContract = useMulticallContract()
+  const multicallContract = useMulticallContract(connection)
 
   const addresses: string[] = useMemo(
     () =>
@@ -35,6 +38,7 @@ export function useETHBalances(
   )
 
   const results = useSingleContractMultipleData(
+    connection,
     multicallContract,
     'getEthBalance',
     addresses.map(address => [address])
@@ -55,6 +59,7 @@ export function useETHBalances(
  * Returns a map of token addresses to their eventually consistent token balances for a single account.
  */
 export function useTokenBalancesWithLoadingIndicator(
+  connection: Web3ReactContextInterface<Web3Provider>,
   address?: string,
   tokens?: (Token | undefined)[]
 ): [{ [tokenAddress: string]: TokenAmount | undefined }, boolean] {
@@ -65,7 +70,7 @@ export function useTokenBalancesWithLoadingIndicator(
 
   const validatedTokenAddresses = useMemo(() => validatedTokens.map(vt => vt.address), [validatedTokens])
 
-  const balances = useMultipleContractSingleData(validatedTokenAddresses, ERC20_INTERFACE, 'balanceOf', [address])
+  const balances = useMultipleContractSingleData(connection, validatedTokenAddresses, ERC20_INTERFACE, 'balanceOf', [address])
 
   const anyLoading: boolean = useMemo(() => balances.some(callState => callState.loading), [balances])
 
@@ -89,20 +94,23 @@ export function useTokenBalancesWithLoadingIndicator(
 }
 
 export function useTokenBalances(
+  connection: Web3ReactContextInterface<Web3Provider>,
   address?: string,
   tokens?: (Token | undefined)[]
 ): { [tokenAddress: string]: TokenAmount | undefined } {
-  return useTokenBalancesWithLoadingIndicator(address, tokens)[0]
+  return useTokenBalancesWithLoadingIndicator(connection, address, tokens)[0]
 }
 
 // get the balance for a single token/account combo
-export function useTokenBalance(account?: string, token?: Token): TokenAmount | undefined {
-  const tokenBalances = useTokenBalances(account, [token])
+export function useTokenBalance(
+    connection: Web3ReactContextInterface<Web3Provider>,account?: string, token?: Token): TokenAmount | undefined {
+  const tokenBalances = useTokenBalances(connection, account, [token])
   if (!token) return undefined
   return tokenBalances[token.address]
 }
 
 export function useCurrencyBalances(
+  connection: Web3ReactContextInterface<Web3Provider>,
   account?: string,
   currencies?: (Currency | undefined)[]
 ): (CurrencyAmount | undefined)[] {
@@ -110,9 +118,9 @@ export function useCurrencyBalances(
     currencies
   ])
 
-  const tokenBalances = useTokenBalances(account, tokens)
+  const tokenBalances = useTokenBalances(connection,account, tokens)
   const containsETH: boolean = useMemo(() => currencies?.some(currency => currency === BNB || currency === ETHER) ?? false, [currencies])
-  const ethBalance = useETHBalances(containsETH ? [account] : [])
+  const ethBalance = useETHBalances(connection, containsETH ? [account] : [])
 
   return useMemo(
     () =>
@@ -126,15 +134,15 @@ export function useCurrencyBalances(
   )
 }
 
-export function useCurrencyBalance(account?: string, currency?: Currency): CurrencyAmount | undefined {
-  return useCurrencyBalances(account, [currency])[0]
+export function useCurrencyBalance(connection: Web3ReactContextInterface<Web3Provider>, account?: string, currency?: Currency): CurrencyAmount | undefined {
+  return useCurrencyBalances(connection, account, [currency])[0]
 }
 
 // mimics useAllBalances
-export function useAllTokenBalances(): { [tokenAddress: string]: TokenAmount | undefined } {
-  const { account } = useActiveWeb3React()
-  const allTokens = useAllTokens()
+export function useAllTokenBalances(connection: Web3ReactContextInterface<Web3Provider>): { [tokenAddress: string]: TokenAmount | undefined } {
+  const { account } = connection
+  const allTokens = useAllTokens(connection)
   const allTokensArray = useMemo(() => Object.values(allTokens ?? {}), [allTokens])
-  const balances = useTokenBalances(account ?? undefined, allTokensArray)
+  const balances = useTokenBalances(connection, account ?? undefined, allTokensArray)
   return balances ?? {}
 }

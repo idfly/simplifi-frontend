@@ -7,18 +7,19 @@ import {
   ETHER
 } from '@pancakeswap-libs/sdk'
 import { useMemo } from 'react'
+// eslint-disable-next-line import/no-unresolved
+import {Web3ReactContextInterface} from "@web3-react/core/dist/types";
+import {Web3Provider} from "@ethersproject/providers";
 import { useSelectedTokenList } from '../state/lists/hooks'
 import { NEVER_RELOAD, useSingleCallResult } from '../state/multicall/hooks'
 // eslint-disable-next-line import/no-cycle
 import { useUserAddedTokens } from '../state/user/hooks'
 import { isAddress } from '../utils'
-
-import { useActiveWeb3React } from './index'
 import { useBytes32TokenContract, useTokenContract } from './useContract'
 
-export function useAllTokens(): { [address: string]: Token } {
-  const { chainId } = useActiveWeb3React()
-  const userAddedTokens = useUserAddedTokens()
+export function useAllTokens(connection: Web3ReactContextInterface<Web3Provider>): { [address: string]: Token } {
+  const { chainId } = connection
+  const userAddedTokens = useUserAddedTokens(connection)
   const allTokens = useSelectedTokenList()
 
   return useMemo(() => {
@@ -40,8 +41,8 @@ export function useAllTokens(): { [address: string]: Token } {
 }
 
 // Check if currency is included in custom list from user storage
-export function useIsUserAddedToken(currency: Currency): boolean {
-  const userAddedTokens = useUserAddedTokens()
+export function useIsUserAddedToken(connection: Web3ReactContextInterface<Web3Provider>, currency: Currency): boolean {
+  const userAddedTokens = useUserAddedTokens(connection)
   return !!userAddedTokens.find((token) => currencyEquals(currency, token))
 }
 
@@ -58,26 +59,27 @@ function parseStringOrBytes32(str: string | undefined, bytes32: string | undefin
 // undefined if invalid or does not exist
 // null if loading
 // otherwise returns the token
-export function useToken(tokenAddress?: string): Token | undefined | null {
-  const { chainId } = useActiveWeb3React()
-  const tokens = useAllTokens()
+export function useToken(connection: Web3ReactContextInterface<Web3Provider>, tokenAddress?: string): Token | undefined | null {
+  const { chainId } = connection
+  const tokens = useAllTokens(connection)
 
   const address = isAddress(tokenAddress)
 
-  const tokenContract = useTokenContract(address || undefined, false)
-  const tokenContractBytes32 = useBytes32TokenContract(address || undefined, false)
+  const tokenContract = useTokenContract(connection, address || undefined, false)
+  const tokenContractBytes32 = useBytes32TokenContract(connection, address || undefined, false)
   const token: Token | undefined = address ? tokens[address] : undefined
 
-  const tokenName = useSingleCallResult(token ? undefined : tokenContract, 'name', undefined, NEVER_RELOAD)
+  const tokenName = useSingleCallResult(connection, token ? undefined : tokenContract, 'name', undefined, NEVER_RELOAD)
   const tokenNameBytes32 = useSingleCallResult(
+    connection,
     token ? undefined : tokenContractBytes32,
     'name',
     undefined,
     NEVER_RELOAD
   )
-  const symbol = useSingleCallResult(token ? undefined : tokenContract, 'symbol', undefined, NEVER_RELOAD)
-  const symbolBytes32 = useSingleCallResult(token ? undefined : tokenContractBytes32, 'symbol', undefined, NEVER_RELOAD)
-  const decimals = useSingleCallResult(token ? undefined : tokenContract, 'decimals', undefined, NEVER_RELOAD)
+  const symbol = useSingleCallResult(connection, token ? undefined : tokenContract, 'symbol', undefined, NEVER_RELOAD)
+  const symbolBytes32 = useSingleCallResult(connection, token ? undefined : tokenContractBytes32, 'symbol', undefined, NEVER_RELOAD)
+  const decimals = useSingleCallResult(connection, token ? undefined : tokenContract, 'decimals', undefined, NEVER_RELOAD)
 
   return useMemo(() => {
     if (token) return token
@@ -108,9 +110,9 @@ export function useToken(tokenAddress?: string): Token | undefined | null {
   ])
 }
 
-export function useCurrency(currencyId: string | undefined): Currency | null | undefined {
+export function useCurrency(connection: Web3ReactContextInterface<Web3Provider>, currencyId: string | undefined): Currency | null | undefined {
   const isBNB = currencyId?.toUpperCase() === 'BNB'
   const isETH = currencyId?.toUpperCase() === 'ETH'
-  const token = useToken(isBNB || isETH ? undefined : currencyId)
+  const token = useToken(connection, isBNB || isETH ? undefined : currencyId)
   return isBNB ? BNB : isETH ? ETHER : token
 }

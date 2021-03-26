@@ -1,5 +1,8 @@
 import { namehash } from 'ethers/lib/utils'
 import { useMemo } from 'react'
+// eslint-disable-next-line import/no-unresolved
+import {Web3ReactContextInterface} from "@web3-react/core/dist/types";
+import {Web3Provider} from "@ethersproject/providers";
 import { useSingleCallResult } from '../state/multicall/hooks'
 import { isAddress } from '../utils'
 import isZero from '../utils/isZero'
@@ -10,7 +13,7 @@ import useDebounce from './useDebounce'
  * Does a reverse lookup for an address to find its ENS name.
  * Note this is not the same as looking up an ENS name to find an address.
  */
-export default function useENSName(address?: string): { ENSName: string | null; loading: boolean } {
+export default function useENSName(connection: Web3ReactContextInterface<Web3Provider>, address?: string): { ENSName: string | null; loading: boolean } {
   const debouncedAddress = useDebounce(address, 200)
   const ensNodeArgument = useMemo(() => {
     if (!debouncedAddress || !isAddress(debouncedAddress)) return [undefined]
@@ -20,14 +23,15 @@ export default function useENSName(address?: string): { ENSName: string | null; 
       return [undefined]
     }
   }, [debouncedAddress])
-  const registrarContract = useENSRegistrarContract(false)
-  const resolverAddress = useSingleCallResult(registrarContract, 'resolver', ensNodeArgument)
+  const registrarContract = useENSRegistrarContract(connection, false)
+  const resolverAddress = useSingleCallResult(connection, registrarContract, 'resolver', ensNodeArgument)
   const resolverAddressResult = resolverAddress.result?.[0]
   const resolverContract = useENSResolverContract(
+    connection,
     resolverAddressResult && !isZero(resolverAddressResult) ? resolverAddressResult : undefined,
     false
   )
-  const name = useSingleCallResult(resolverContract, 'name', ensNodeArgument)
+  const name = useSingleCallResult(connection, resolverContract, 'name', ensNodeArgument)
 
   const changed = debouncedAddress !== address
   return {

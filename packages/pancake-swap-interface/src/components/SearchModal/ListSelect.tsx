@@ -2,6 +2,9 @@ import React, { memo, useCallback, useMemo, useRef, useState } from 'react'
 import { ArrowLeft } from 'react-feather'
 import { usePopper } from 'react-popper'
 import { useDispatch, useSelector } from 'react-redux'
+// eslint-disable-next-line import/no-unresolved
+import {Web3ReactContextInterface} from "@web3-react/core/dist/types";
+import {Web3Provider} from "@ethersproject/providers";
 import { Button, Text, ChevronDownIcon, CloseIcon } from '@pancakeswap-libs/uikit'
 import styled from 'styled-components'
 import useI18n from 'hooks/useI18n'
@@ -206,7 +209,11 @@ const ListContainer = styled.div`
   overflow: auto;
 `
 
-export function ListSelect({ onDismiss, onBack }: { onDismiss: () => void; onBack: () => void }) {
+export function ListSelect({ connection, onDismiss, onBack }: {
+  connection: Web3ReactContextInterface<Web3Provider>;
+  onDismiss: () => void;
+  onBack: () => void
+}) {
   const [listUrlInput, setListUrlInput] = useState<string>('')
 
   const dispatch = useDispatch<AppDispatch>()
@@ -218,7 +225,7 @@ export function ListSelect({ onDismiss, onBack }: { onDismiss: () => void; onBac
     setListUrlInput(e.target.value)
     setAddError(null)
   }, [])
-  const fetchList = useFetchListCallback()
+  const fetchList = useFetchListCallback(connection)
 
   const handleAddList = useCallback(() => {
     if (adding) return

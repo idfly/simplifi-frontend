@@ -3,7 +3,9 @@ import { BigNumber } from '@ethersproject/bignumber'
 import { Contract } from '@ethersproject/contracts'
 import { useEffect, useMemo } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { useActiveWeb3React } from '../../hooks'
+// eslint-disable-next-line import/no-unresolved
+import {Web3ReactContextInterface} from "@web3-react/core/dist/types";
+import {Web3Provider} from "@ethersproject/providers";
 import { useBlockNumber } from '../application/hooks'
 import { AppDispatch, AppState } from '../index'
 import {
@@ -49,8 +51,8 @@ export const NEVER_RELOAD: ListenerOptions = {
 }
 
 // the lowest level call for subscribing to contract data
-function useCallsData(calls: (Call | undefined)[], options?: ListenerOptions): CallResult[] {
-  const { chainId } = useActiveWeb3React()
+function useCallsData(connection: Web3ReactContextInterface<Web3Provider>, calls: (Call | undefined)[], options?: ListenerOptions): CallResult[] {
+  const { chainId } = connection
   const callResults = useSelector<AppState, AppState['multicall']['callResults']>(
     (state) => state.multicall.callResults
   )
@@ -160,6 +162,7 @@ function toCallState(
 }
 
 export function useSingleContractMultipleData(
+  connection: Web3ReactContextInterface<Web3Provider>,
   contract: Contract | null | undefined,
   methodName: string,
   callInputs: OptionalMethodInputs[],
@@ -180,9 +183,9 @@ export function useSingleContractMultipleData(
     [callInputs, contract, fragment]
   )
 
-  const results = useCallsData(calls, options)
+  const results = useCallsData(connection, calls, options)
 
-  const latestBlockNumber = useBlockNumber()
+  const latestBlockNumber = useBlockNumber(connection)
 
   return useMemo(() => {
     return results.map((result) => toCallState(result, contract?.interface, fragment, latestBlockNumber))
@@ -190,6 +193,7 @@ export function useSingleContractMultipleData(
 }
 
 export function useMultipleContractSingleData(
+  connection: Web3ReactContextInterface<Web3Provider>,
   addresses: (string | undefined)[],
   contractInterface: Interface,
   methodName: string,
@@ -220,9 +224,9 @@ export function useMultipleContractSingleData(
     [addresses, callData, fragment]
   )
 
-  const results = useCallsData(calls, options)
+  const results = useCallsData(connection, calls, options)
 
-  const latestBlockNumber = useBlockNumber()
+  const latestBlockNumber = useBlockNumber(connection)
 
   return useMemo(() => {
     return results.map((result) => toCallState(result, contractInterface, fragment, latestBlockNumber))
@@ -230,6 +234,7 @@ export function useMultipleContractSingleData(
 }
 
 export function useSingleCallResult(
+  connection: Web3ReactContextInterface<Web3Provider>,
   contract: Contract | null | undefined,
   methodName: string,
   inputs?: OptionalMethodInputs,
@@ -248,8 +253,8 @@ export function useSingleCallResult(
       : []
   }, [contract, fragment, inputs])
 
-  const result = useCallsData(calls, options)[0]
-  const latestBlockNumber = useBlockNumber()
+  const result = useCallsData(connection, calls, options)[0]
+  const latestBlockNumber = useBlockNumber(connection)
 
   return useMemo(() => {
     return toCallState(result, contract?.interface, fragment, latestBlockNumber)

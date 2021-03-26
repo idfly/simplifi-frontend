@@ -1,6 +1,8 @@
 import React, { useMemo } from 'react'
 import { CheckmarkCircleIcon, ErrorIcon, Flex, LinkExternal, Text, Modal, Button } from '@pancakeswap-libs/uikit'
-import { useActiveWeb3React } from 'hooks'
+// eslint-disable-next-line import/no-unresolved
+import {Web3ReactContextInterface} from "@web3-react/core/dist/types";
+import {Web3Provider} from "@ethersproject/providers";
 import { getBscScanLink } from 'utils'
 import { isTransactionRecent, useAllTransactions } from 'state/transactions/hooks'
 import { TransactionDetails } from 'state/transactions/reducer'
@@ -9,6 +11,7 @@ import Loader from 'components/Loader'
 type RecentTransactionsModalProps = {
   onDismiss?: () => void
   translateString: (translationId: number, fallback: string) => (string)
+  connection: Web3ReactContextInterface<Web3Provider>
 }
 
 // TODO: Fix UI Kit typings
@@ -30,10 +33,10 @@ const getRowStatus = (sortedRecentTransaction: TransactionDetails) => {
   return { icon: <ErrorIcon color="failure" />, color: 'failure' }
 }
 
-const RecentTransactionsModal = ({ onDismiss = defaultOnDismiss, translateString }: RecentTransactionsModalProps) => {
+const RecentTransactionsModal = ({connection, onDismiss = defaultOnDismiss, translateString }: RecentTransactionsModalProps) => {
   const TranslateString = translateString
-  const { account, chainId } = useActiveWeb3React()
-  const allTransactions = useAllTransactions()
+  const { account, chainId } = connection
+  const allTransactions = useAllTransactions(connection)
 
   // Logic taken from Web3Status/index.tsx line 175
   const sortedRecentTransactions = useMemo(() => {

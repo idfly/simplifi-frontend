@@ -1,18 +1,19 @@
-import { TransactionResponse } from '@ethersproject/providers'
+import { TransactionResponse, Web3Provider } from '@ethersproject/providers'
 import { useCallback, useMemo } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
+// eslint-disable-next-line import/no-unresolved
+import {Web3ReactContextInterface} from "@web3-react/core/dist/types";
 
-import { useActiveWeb3React } from '../../hooks'
 import { AppDispatch, AppState } from '../index'
 import { addTransaction } from './actions'
 import { TransactionDetails } from './reducer'
 
 // helper that can take a ethers library transaction response and add it to the list of transactions
-export function useTransactionAdder(): (
+export function useTransactionAdder(connection: Web3ReactContextInterface<Web3Provider>): (
   response: TransactionResponse,
   customData?: { summary?: string; approval?: { tokenAddress: string; spender: string } }
 ) => void {
-  const { chainId, account } = useActiveWeb3React()
+  const { chainId, account } = connection
   const dispatch = useDispatch<AppDispatch>()
 
   return useCallback(
@@ -34,16 +35,16 @@ export function useTransactionAdder(): (
 }
 
 // returns all the transactions for the current chain
-export function useAllTransactions(): { [txHash: string]: TransactionDetails } {
-  const { chainId } = useActiveWeb3React()
+export function useAllTransactions(connection: Web3ReactContextInterface<Web3Provider>): { [txHash: string]: TransactionDetails } {
+  const { chainId } = connection
 
   const state = useSelector<AppState, AppState['transactions']>((s) => s.transactions)
 
   return chainId ? state[chainId] ?? {} : {}
 }
 
-export function useIsTransactionPending(transactionHash?: string): boolean {
-  const transactions = useAllTransactions()
+export function useIsTransactionPending(connection: Web3ReactContextInterface<Web3Provider>, transactionHash?: string): boolean {
+  const transactions = useAllTransactions(connection)
 
   if (!transactionHash || !transactions[transactionHash]) return false
 
@@ -59,8 +60,8 @@ export function isTransactionRecent(tx: TransactionDetails): boolean {
 }
 
 // returns whether a token has a pending approval transaction
-export function useHasPendingApproval(tokenAddress: string | undefined, spender: string | undefined): boolean {
-  const allTransactions = useAllTransactions()
+export function useHasPendingApproval(connection: Web3ReactContextInterface<Web3Provider>, tokenAddress: string | undefined, spender: string | undefined): boolean {
+  const allTransactions = useAllTransactions(connection)
   return useMemo(
     () =>
       typeof tokenAddress === 'string' &&

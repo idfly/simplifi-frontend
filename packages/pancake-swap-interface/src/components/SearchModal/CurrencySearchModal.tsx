@@ -1,5 +1,8 @@
 import { Currency } from '@pancakeswap-libs/sdk'
 import React, { useCallback, useEffect, useState } from 'react'
+// eslint-disable-next-line import/no-unresolved
+import {Web3ReactContextInterface} from "@web3-react/core/dist/types";
+import {Web3Provider} from "@ethersproject/providers";
 import useLast from '../../hooks/useLast'
 import { useSelectedListUrl } from '../../state/lists/hooks'
 import Modal from '../Modal'
@@ -14,6 +17,7 @@ interface CurrencySearchModalProps {
   otherSelectedCurrency?: Currency | null
   // eslint-disable-next-line react/no-unused-prop-types
   showCommonBases?: boolean
+  connection: Web3ReactContextInterface<Web3Provider>
 }
 
 export default function CurrencySearchModal({
@@ -22,6 +26,7 @@ export default function CurrencySearchModal({
   onCurrencySelect,
   selectedCurrency,
   otherSelectedCurrency,
+  connection
 }: CurrencySearchModalProps) {
   const [listView, setListView] = useState<boolean>(false)
   const lastOpen = useLast(isOpen)
@@ -53,7 +58,7 @@ export default function CurrencySearchModal({
   return (
     <Modal isOpen={isOpen} onDismiss={onDismiss} maxHeight={90} minHeight={listView ? 40 : noListSelected ? 0 : 80}>
       {listView ? (
-        <ListSelect onDismiss={onDismiss} onBack={handleClickBack} />
+        <ListSelect onDismiss={onDismiss} onBack={handleClickBack} connection={connection} />
       ) : noListSelected ? (
         <CurrencySearch
           isOpen={isOpen}
@@ -63,6 +68,7 @@ export default function CurrencySearchModal({
           selectedCurrency={selectedCurrency}
           otherSelectedCurrency={otherSelectedCurrency}
           showCommonBases={false}
+          connection={connection}
         />
       ) : (
         <CurrencySearch
@@ -73,6 +79,7 @@ export default function CurrencySearchModal({
           selectedCurrency={selectedCurrency}
           otherSelectedCurrency={otherSelectedCurrency}
           showCommonBases={false}
+          connection={connection}
         />
       )}
     </Modal>

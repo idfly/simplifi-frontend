@@ -2,8 +2,10 @@ import React, { useCallback } from 'react'
 import styled from 'styled-components'
 import { Text } from '@pancakeswap-libs/uikit'
 import useI18n from 'hooks/useI18n'
+// eslint-disable-next-line import/no-unresolved
+import {Web3ReactContextInterface} from "@web3-react/core/dist/types";
+import {Web3Provider} from "@ethersproject/providers";
 import useENS from '../../hooks/useENS'
-import { useActiveWeb3React } from '../../hooks'
 import { ExternalLink } from '../Shared'
 import { AutoColumn } from '../Column'
 import { RowBetween } from '../Row'
@@ -72,16 +74,18 @@ export default function AddressInputPanel({
   id,
   value,
   onChange,
+  connection
 }: {
   id?: string
   // the typed string value
   value: string
   // triggers whenever the typed value changes
   onChange: (value: string) => void
+  connection: Web3ReactContextInterface<Web3Provider>
 }) {
-  const { chainId } = useActiveWeb3React()
+  const { chainId } = connection
   const TranslateString = useI18n()
-  const { address, loading, name } = useENS(value)
+  const { address, loading, name } = useENS(connection, value)
 
   const handleInput = useCallback(
     (event) => {

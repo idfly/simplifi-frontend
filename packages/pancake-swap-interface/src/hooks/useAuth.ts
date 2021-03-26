@@ -13,8 +13,8 @@ import { connectorLocalStorageKey, ConnectorNames } from '@pancakeswap-libs/uiki
 import useToast from 'hooks/useToast'
 import { connectorsByName } from 'connectors'
 
-const useAuth = () => {
-  const { activate, deactivate } = useWeb3React()
+const useAuth = (key) => {
+  const { activate, deactivate } = useWeb3React(key)
   const { toastError } = useToast()
 
   const login = useCallback((connectorID: ConnectorNames) => {
