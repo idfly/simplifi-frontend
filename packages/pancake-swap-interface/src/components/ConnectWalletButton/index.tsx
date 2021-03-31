@@ -4,9 +4,15 @@ import useI18n from 'hooks/useI18n'
 import useAuth from 'hooks/useAuth'
 import {NetworkContextName} from "../../constants";
 
-const UnlockButton: React.FC<ButtonProps> = (props) => {
+interface NetworkNameProps {
+  networkContextName?: string;
+}
+
+const UnlockButton: React.FC<NetworkNameProps & ButtonProps> = (props) => {
   const TranslateString = useI18n()
-  const { login, logout } = useAuth(NetworkContextName)
+
+  const {networkContextName} = props
+  const { login, logout } = useAuth(networkContextName || NetworkContextName)
   const { onPresentConnectModal } = useWalletModal(login, logout)
 
   return (

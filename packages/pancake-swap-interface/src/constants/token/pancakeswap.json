@@ -1332,6 +1332,14 @@
       "logoURI": "https://assets.coingecko.com/coins/images/605/thumb/melon.png?1547034295"
     },
     {
+      "chainId": 1,
+      "address": "0x111111111117dc0aa78b770fa6a738034120c302",
+      "name": "1INCH",
+      "symbol": "1INCH",
+      "decimals": 18,
+      "logoURI": "https://assets.coingecko.com/coins/images/13469/thumb/1inch-token.png?1608803028"
+    },
+    {
       "name": "Wrapped Ether",
       "address": "0xc778417E063141139Fce010982780140Aa0cD5Ab",
       "symbol": "WETH",
@@ -1362,6 +1370,22 @@
       "decimals": 18,
       "chainId": 4,
       "logoURI": "ipfs://QmXttGpZrECX5qCyXbBQiqgQNytVGeZW5Anewvh2jc4psg"
+    },
+    {
+      "name": "SuperAlpaca",
+      "address": "0x7BC95fF2E470068DDF6adCF0B440230e4DbA5a89",
+      "symbol": "ALP300",
+      "decimals": 18,
+      "chainId": 4,
+      "logoURI": "https://rinkeby.etherscan.io/images/main/empty-token.png"
+    },
+    {
+      "name": "Synt",
+      "address": "0x3615e30e4C1591194E80edBE38a39F0127c9E9eb",
+      "symbol": "SYNT",
+      "decimals": 18,
+      "chainId": 97,
+      "logoURI": "https://testnet.bscscan.com/images/main/empty-token.png"
     }
   ]
 }

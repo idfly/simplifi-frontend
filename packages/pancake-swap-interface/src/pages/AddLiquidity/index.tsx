@@ -22,7 +22,7 @@ import { MinimalPositionCard } from 'components/PositionCard'
 import Row, { RowBetween, RowFlat } from 'components/Row'
 
 import { PairState } from 'data/Reserves'
-import {useFirstWeb3React, useSecondWeb3React} from 'hooks'
+import {useFirstWeb3React} from 'hooks'
 import { useCurrency } from 'hooks/Tokens'
 import { ApprovalState, useApproveCallback } from 'hooks/useApproveCallback'
 import { Field } from 'state/mint/actions'
@@ -41,7 +41,7 @@ import AppBody from '../AppBody'
 import { Dots, Wrapper } from '../Pool/styleds'
 import { ConfirmAddModalBottom } from './ConfirmAddModalBottom'
 import { PoolPriceBar } from './PoolPriceBar'
-import { ROUTER_ADDRESS } from '../../constants'
+import {NETWORK_NAMES, ROUTER_ADDRESS} from '../../constants'
 
 export default function AddLiquidity({
   match: {
@@ -50,15 +50,14 @@ export default function AddLiquidity({
   history,
 }: RouteComponentProps<{ currencyIdA?: string; currencyIdB?: string }>) {
   const connection1 = useFirstWeb3React()
-  const connection2 = useSecondWeb3React()
 
   const { account, chainId, library } = connection1
 
   const currencyA = useCurrency(connection1, currencyIdA)
-  const currencyB = useCurrency(connection2, currencyIdB)
+  const currencyB = useCurrency(connection1, currencyIdB)
   const TranslateString = useI18n()
 
-  const oneCurrencyIsWBNB = Boolean(
+  const oneCurrencyIsNative = Boolean(
     chainId &&
       ((currencyA && currencyEquals(currencyA, WETH[chainId])) ||
         (currencyB && currencyEquals(currencyB, WETH[chainId])))
@@ -120,10 +119,12 @@ export default function AddLiquidity({
     {}
   )
 
-  const defaultChainId = 56;
+
   // check whether the user has approved the router on the tokens
-  const [approvalA, approveACallback] = useApproveCallback(connection1, parsedAmounts[Field.CURRENCY_A], ROUTER_ADDRESS[chainId || defaultChainId])
-  const [approvalB, approveBCallback] = useApproveCallback(connection2, parsedAmounts[Field.CURRENCY_B], ROUTER_ADDRESS[chainId || defaultChainId])
+  const [approvalA, approveACallback] =
+      useApproveCallback(connection1, parsedAmounts[Field.CURRENCY_A], chainId ? ROUTER_ADDRESS[chainId] : undefined)
+  const [approvalB, approveBCallback] =
+      useApproveCallback(connection1, parsedAmounts[Field.CURRENCY_B], chainId ? ROUTER_ADDRESS[chainId] : undefined)
 
   const addTransaction = useTransactionAdder(connection1)
 
@@ -327,32 +328,36 @@ export default function AddLiquidity({
           <CardBody>
             <AutoColumn gap="20px">
               {noLiquidity && (
-                <ColumnCenter>
-                  <Pane>
-                    <AutoColumn gap="12px">
-                      <UIKitText>{TranslateString(1158, 'You are the first liquidity provider.')}</UIKitText>
-                      <UIKitText>
-                        {TranslateString(1160, 'The ratio of tokens you add will set the price of this pool.')}
-                      </UIKitText>
-                      <UIKitText>
-                        {TranslateString(1162, 'Once you are happy with the rate click supply to review.')}
-                      </UIKitText>
-                    </AutoColumn>
-                  </Pane>
-                </ColumnCenter>
+                  <ColumnCenter>
+                    <Pane>
+                      <AutoColumn gap="12px">
+                        <UIKitText>{TranslateString(1158, 'You are the first liquidity provider.')}</UIKitText>
+                        <UIKitText>
+                          {TranslateString(1160, 'The ratio of tokens you add will set the price of this pool.')}
+                        </UIKitText>
+                        <UIKitText>
+                          {TranslateString(1162, 'Once you are happy with the rate click supply to review.')}
+                        </UIKitText>
+                      </AutoColumn>
+                    </Pane>
+                  </ColumnCenter>
               )}
+              {connection1?.chainId && <>
+              <ColumnCenter>
+                {NETWORK_NAMES[connection1.chainId]}
+              </ColumnCenter>
               <CurrencyInputPanel
-                value={formattedAmounts[Field.CURRENCY_A]}
-                onUserInput={onFieldAInput}
-                onMax={() => {
-                  onFieldAInput(maxAmounts[Field.CURRENCY_A]?.toExact() ?? '')
-                }}
-                onCurrencySelect={handleCurrencyASelect}
-                showMaxButton={!atMaxAmounts[Field.CURRENCY_A]}
-                currency={currencies[Field.CURRENCY_A]}
-                id="add-liquidity-input-tokena"
-                showCommonBases={false}
-                connection={connection1}
+                  value={formattedAmounts[Field.CURRENCY_A]}
+                  onUserInput={onFieldAInput}
+                  onMax={() => {
+                    onFieldAInput(maxAmounts[Field.CURRENCY_A]?.toExact() ?? '')
+                  }}
+                  onCurrencySelect={handleCurrencyASelect}
+                  showMaxButton={!atMaxAmounts[Field.CURRENCY_A]}
+                  currency={currencies[Field.CURRENCY_A]}
+                  id="add-liquidity-input-tokena"
+                  showCommonBases={false}
+                  connection={connection1}
               />
               <ColumnCenter>
                 <AddIcon color="textSubtle" />
@@ -368,7 +373,7 @@ export default function AddLiquidity({
                 currency={currencies[Field.CURRENCY_B]}
                 id="add-liquidity-input-tokenb"
                 showCommonBases={false}
-                connection={connection2}
+                connection={connection1}
               />
               {currencies[Field.CURRENCY_A] && currencies[Field.CURRENCY_B] && pairState !== PairState.INVALID && (
                 <div>
@@ -451,13 +456,14 @@ export default function AddLiquidity({
                   </Button>
                 </AutoColumn>
               )}
+              </>}
             </AutoColumn>
           </CardBody>
         </Wrapper>
       </AppBody>
       {pair && !noLiquidity && pairState !== PairState.INVALID ? (
         <AutoColumn style={{ minWidth: '20rem', marginTop: '1rem' }}>
-          <MinimalPositionCard connection={connection1} showUnwrapped={oneCurrencyIsWBNB} pair={pair} />
+          <MinimalPositionCard connection={connection1} showUnwrapped={oneCurrencyIsNative} pair={pair} />
         </AutoColumn>
       ) : null}
     </>

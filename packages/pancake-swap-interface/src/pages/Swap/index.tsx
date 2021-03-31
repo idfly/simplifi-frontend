@@ -78,7 +78,7 @@ const Swap = () => {
     v2Trade, currencyBalances,
     parsedAmount,
     currencies, inputError: swapInputError
-  } = useDerivedSwapInfo(connection2)
+  } = useDerivedSwapInfo(connection1)
   const { wrapType, execute: onWrap, inputError: wrapInputError } = useWrapCallback(
     connection1,
     currencies[Field.INPUT],

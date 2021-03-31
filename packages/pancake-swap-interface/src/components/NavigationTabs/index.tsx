@@ -66,3 +66,23 @@ export function AddRemoveTabs({ adding }: { adding: boolean }) {
     </Tabs>
   )
 }
+
+export function SynthesisTabs() {
+  const TranslateString = useI18n()
+  return (
+      <Tabs>
+        <RowBetween style={{padding: '1rem'}}>
+          <HistoryLink to="/pool">
+            <StyledArrowLeft/>
+          </HistoryLink>
+          <ActiveText>Synthesize tokens</ActiveText>
+          <QuestionHelper
+              text={TranslateString(
+                  264,
+                  'When you synthesize token, you are given synthetic representation that token at other chain.'
+              )}
+          />
+        </RowBetween>
+      </Tabs>
+  )
+}

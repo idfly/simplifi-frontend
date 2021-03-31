@@ -47,6 +47,7 @@ import { useBurnActionHandlers, useDerivedBurnInfo, useBurnState } from '../../s
 
 import { Field } from '../../state/burn/actions'
 import { useUserDeadline, useUserSlippageTolerance } from '../../state/user/hooks'
+import Unsynthesize from "../../components/Unsynthesize";
 
 const OutlineCard = styled.div`
   border: 1px solid ${({ theme }) => theme.colors.borderColor};
@@ -685,6 +686,9 @@ export default function RemoveLiquidity({
                   </RowBetween>
                 )}
               </div>
+
+              <br/>
+              <Unsynthesize connection={connection1} otherConnection={connection2}/>
             </Body>
           </AutoColumn>
         </Wrapper>
