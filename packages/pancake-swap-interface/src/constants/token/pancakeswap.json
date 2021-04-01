@@ -1380,9 +1380,9 @@
       "logoURI": "https://rinkeby.etherscan.io/images/main/empty-token.png"
     },
     {
-      "name": "Synt",
-      "address": "0x3615e30e4C1591194E80edBE38a39F0127c9E9eb",
-      "symbol": "SYNT",
+      "name": "sAlpaca",
+      "address": "0x4148a37F1cDeC084B98A3f26Dfa7680189a4caEA",
+      "symbol": "sALP300",
       "decimals": 18,
       "chainId": 97,
       "logoURI": "https://testnet.bscscan.com/images/main/empty-token.png"

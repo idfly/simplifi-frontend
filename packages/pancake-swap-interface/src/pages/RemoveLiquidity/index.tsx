@@ -29,7 +29,7 @@ import { RowBetween, RowFixed } from '../../components/Row'
 import Slider from '../../components/Slider'
 import CurrencyLogo from '../../components/CurrencyLogo'
 import { ROUTER_ADDRESS } from '../../constants'
-import {useFirstWeb3React, useSecondWeb3React} from '../../hooks'
+import {useFirstWeb3React} from '../../hooks'
 import { useCurrency } from '../../hooks/Tokens'
 import { usePairContract } from '../../hooks/useContract'
 
@@ -47,7 +47,6 @@ import { useBurnActionHandlers, useDerivedBurnInfo, useBurnState } from '../../s
 
 import { Field } from '../../state/burn/actions'
 import { useUserDeadline, useUserSlippageTolerance } from '../../state/user/hooks'
-import Unsynthesize from "../../components/Unsynthesize";
 
 const OutlineCard = styled.div`
   border: 1px solid ${({ theme }) => theme.colors.borderColor};
@@ -67,10 +66,9 @@ export default function RemoveLiquidity({
   },
 }: RouteComponentProps<{ currencyIdA: string; currencyIdB: string }>) {
   const connection1 = useFirstWeb3React()
-  const connection2 = useSecondWeb3React()
   const [currencyA, currencyB] = [
       useCurrency(connection1, currencyIdA) ?? undefined,
-      useCurrency(connection2, currencyIdB) ?? undefined
+      useCurrency(connection1, currencyIdB) ?? undefined
   ]
   const { account, chainId, library } = connection1
   const TranslateString = useI18n()
@@ -686,9 +684,6 @@ export default function RemoveLiquidity({
                   </RowBetween>
                 )}
               </div>
-
-              <br/>
-              <Unsynthesize connection={connection1} otherConnection={connection2}/>
             </Body>
           </AutoColumn>
         </Wrapper>

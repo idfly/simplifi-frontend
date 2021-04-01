@@ -72,7 +72,7 @@ export function SynthesisTabs() {
   return (
       <Tabs>
         <RowBetween style={{padding: '1rem'}}>
-          <HistoryLink to="/pool">
+          <HistoryLink to="/synthesis">
             <StyledArrowLeft/>
           </HistoryLink>
           <ActiveText>Synthesize tokens</ActiveText>
@@ -80,6 +80,25 @@ export function SynthesisTabs() {
               text={TranslateString(
                   264,
                   'When you synthesize token, you are given synthetic representation that token at other chain.'
+              )}
+          />
+        </RowBetween>
+      </Tabs>
+  )
+}
+export function UnsynthesisTabs() {
+  const TranslateString = useI18n()
+  return (
+      <Tabs>
+        <RowBetween style={{padding: '1rem'}}>
+          <HistoryLink to="/synthesis">
+            <StyledArrowLeft/>
+          </HistoryLink>
+          <ActiveText>Unsynthesize tokens</ActiveText>
+          <QuestionHelper
+              text={TranslateString(
+                  264,
+                  'When you unsynthesize token, you are given real token at other chain.'
               )}
           />
         </RowBetween>
