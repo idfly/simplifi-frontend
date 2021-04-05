@@ -23,7 +23,7 @@ const ConfirmationPendingContent = ({ onDismiss, pendingText }: ConfirmationPend
         <AutoColumn gap="12px" justify="center">
           <AutoColumn gap="12px" justify="center">
             <Text fontSize="14px">
-              <strong>{pendingText}</strong>
+              <strong dangerouslySetInnerHTML={{ __html: pendingText}}/>
             </Text>
           </AutoColumn>
           <Text fontSize="14px">Confirm this transaction in your wallet</Text>

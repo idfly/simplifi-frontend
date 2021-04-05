@@ -33,7 +33,9 @@ export default function ConfirmSwapModal({
   swapErrorMessage,
   isOpen,
   attemptingTxn,
-  txHash
+  txHash,
+  pendingText,
+  chainId
 }: {
   isOpen: boolean
   trade: Trade | undefined
@@ -46,6 +48,8 @@ export default function ConfirmSwapModal({
   onConfirm: () => void
   swapErrorMessage: string | undefined
   onDismiss: () => void
+  pendingText: string | undefined
+  chainId?: number | undefined
 }) {
   const showAcceptChanges = useMemo(
     () => Boolean(trade && originalTrade && tradeMeaningfullyDiffers(trade, originalTrade)),
@@ -77,7 +81,7 @@ export default function ConfirmSwapModal({
   }, [allowedSlippage, onConfirm, showAcceptChanges, swapErrorMessage, trade])
 
   // text to show while loading
-  const pendingText = `Swapping ${trade?.inputAmount?.toSignificant(6)} ${
+  const defaultPendingText = `Swapping ${trade?.inputAmount?.toSignificant(6)} ${
     trade?.inputAmount?.currency?.symbol
   } for ${trade?.outputAmount?.toSignificant(6)} ${trade?.outputAmount?.currency?.symbol}`
 
@@ -103,7 +107,8 @@ export default function ConfirmSwapModal({
       attemptingTxn={attemptingTxn}
       hash={txHash}
       content={confirmationContent}
-      pendingText={pendingText}
+      pendingText={pendingText || defaultPendingText}
+      chainId={chainId}
     />
   )
 }

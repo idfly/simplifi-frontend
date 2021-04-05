@@ -30,7 +30,7 @@ export function useApproveCallback(
   connection: Web3ReactContextInterface<Web3Provider>,
   amountToApprove?: CurrencyAmount,
   spender?: string
-): [ApprovalState, () => Promise<void>] {
+): [ApprovalState, () => Promise<TransactionResponse | undefined>] {
   const { account } = connection
   const token = amountToApprove instanceof TokenAmount ? amountToApprove.token : undefined
   const currentAllowance = useTokenAllowance(connection, token, account ?? undefined, spender)
@@ -54,7 +54,7 @@ export function useApproveCallback(
   const tokenContract = useTokenContract(connection, token?.address)
   const addTransaction = useTransactionAdder(connection)
 
-  const approve = useCallback(async (): Promise<void> => {
+  const approve = useCallback(async (): Promise<TransactionResponse | undefined> => {
     if (approvalState !== ApprovalState.NOT_APPROVED) {
       console.error('approve was called unnecessarily')
       return
@@ -96,6 +96,7 @@ export function useApproveCallback(
           summary: `Approve ${amountToApprove.currency.symbol}`,
           approval: { tokenAddress: token.address, spender },
         })
+        return response
       })
       .catch((error: Error) => {
         console.error('Failed to approve token', error)
@@ -112,6 +113,6 @@ export function useApproveCallbackFromTrade(connection: Web3ReactContextInterfac
     () => (trade ? computeSlippageAdjustedAmounts(trade, allowedSlippage)[Field.INPUT] : undefined),
     [trade, allowedSlippage]
   )
-  const defaultChainId = 56;
-  return useApproveCallback(connection, amountToApprove, ROUTER_ADDRESS[trade?.route.chainId || defaultChainId])
+  const spender = trade?.route.chainId ? ROUTER_ADDRESS[trade?.route.chainId] : undefined
+  return useApproveCallback(connection, amountToApprove, spender)
 }

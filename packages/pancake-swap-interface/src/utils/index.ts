@@ -28,15 +28,15 @@ export function isAddress(value: any): string | false {
   }
 }
 
-const BSCSCAN_PREFIXES: { [chainId in ChainId]: string } = {
-  1: '',
-  4: 'testnet',
-  56: '',
-  97: 'testnet.'
+const EXPLORER_URLS: { [chainId in ChainId]: string } = {
+  1: 'etherscan.io',
+  4: 'rinkeby.etherscan.io',
+  56: 'bscscan.com',
+  97: 'testnet.bscscan.com'
 }
 
 export function getBscScanLink(chainId: ChainId, data: string, type: 'transaction' | 'token' | 'address'): string {
-  const prefix = `https://${BSCSCAN_PREFIXES[chainId] || BSCSCAN_PREFIXES[ChainId.MAINNET]}bscscan.com`
+  const prefix = `https://${EXPLORER_URLS[chainId]}`
 
   switch (type) {
     case 'transaction': {

@@ -475,6 +475,7 @@ export default function RemoveLiquidity({
               />
             )}
             pendingText={pendingText}
+            chainId={chainId}
           />
           <AutoColumn gap="md">
             <Body>

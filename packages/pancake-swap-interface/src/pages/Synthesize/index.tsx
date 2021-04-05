@@ -87,20 +87,16 @@ export default function Synthesize() {
     (async () => {
       const contract = getSynthesizeContract(chainId2, library2, account2)
       const reprAddress = await contract.representationSynt(token)
-      console.log('update repr!!', reprAddress)
       const reprToken = otherAllTokens[reprAddress]
-      console.log('reprToken!!', reprToken)
       setTokenRepr(reprToken || '')
     })()
   }, [otherAllTokens, chainId2, library2, account2, token])
-
 
   async function onSynt() {
     if (!realToken || !chainId1 || !library1 || !account1 || !account2) return
 
     const portal = getPortalContract(chainId1, library1, account1)
     const argsSynt = [realToken.address, amount?.raw.toString(), account2]
-    console.log('argsSynt', argsSynt)
     const estimateSynt = portal.estimateGas.synthesize
 
     setAttemptingTxn(true)
@@ -142,7 +138,9 @@ export default function Synthesize() {
               {amount?.toSignificant()} {tokenRepr?.symbol}
             </UIKitText>
           </RowFlat>
-          on {otherConnection?.chainId ? NETWORK_NAMES[otherConnection?.chainId] : ''}
+          <UIKitText fontSize="14px" mr="8px">
+            on {otherConnection?.chainId ? NETWORK_NAMES[otherConnection?.chainId] : ''} to address {account2}
+          </UIKitText>
         </AutoColumn>
     )
   }
@@ -175,6 +173,7 @@ export default function Synthesize() {
                     />
                 )}
                 pendingText={pendingText}
+                chainId={chainId1}
             />
             <CardBody>
               <AutoColumn gap="20px">

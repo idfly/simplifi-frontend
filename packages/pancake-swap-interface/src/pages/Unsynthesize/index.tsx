@@ -11,9 +11,9 @@ import {
 } from "../../hooks/useApproveCallback";
 import {Dots, Wrapper} from "../Pool/styleds";
 import {
-  NETWORK_NAMES, NetworkContextName,
+  NETWORK_NAMES,
   NetworkContextName2,
-  PORTAL_ADDRESS
+  SYNTHESIZE_ADDRESS
 } from "../../constants";
 import {useTokenContract} from "../../hooks/useContract";
 import {
@@ -43,7 +43,7 @@ export default function Unsynthesize() {
   const otherConnection = useSecondWeb3React()
 
   const {account: account1, chainId: chainId1, library: library1} = connection
-  const {account: account2, chainId: chainId2, library: library2} = otherConnection
+  const {account: account2 } = otherConnection
 
   const {value} = useUnsynthesizeState()
   const [currency, setCurrency] = useState<Currency | undefined>(undefined)
@@ -66,7 +66,7 @@ export default function Unsynthesize() {
   const {onInput} = useUnsynthesizeActionHandlers()
 
   const [approval, approve] = useApproveCallback(
-      connection, amount, chainId1 ? PORTAL_ADDRESS[chainId1] : undefined
+      connection, amount, chainId1 ? SYNTHESIZE_ADDRESS[chainId1] : undefined
   )
 
   const syntToken = useTokenContract(connection, token, true);
@@ -83,14 +83,14 @@ export default function Unsynthesize() {
     if (!chainId1 || !library1 || !account1 || !token) return
     setTokenReal(undefined);
     (async () => {
-      console.log('start')
       const contract = getSynthesizeContract(chainId1, library1, account1)
-      console.log('contract', contract)
-      const realAddress = await contract.representationReal(token)
-      console.log('update real!!', realAddress, otherAllTokens)
-      const realToken = otherAllTokens[realAddress]
-      console.log('realToken!!', realToken)
-      setTokenReal(realToken || '')
+      try {
+        const realAddress = await contract.representationReal(token)
+        const realToken = otherAllTokens[realAddress]
+        setTokenReal(realToken || '')
+      } catch (e) {
+        console.error('representationReal error',e)
+      }
     })()
   }, [otherAllTokens, chainId1, library1, account1, token])
 
@@ -100,7 +100,6 @@ export default function Unsynthesize() {
 
     const synthesize = getSynthesizeContract(chainId1, library1, account1)
     const argsBurn = [syntToken.address, amount?.raw.toString(), account2]
-    console.log('argsBurn', argsBurn)
     const estimateBurn = synthesize.estimateGas.burn
 
     setAttemptingTxn(true)
@@ -142,7 +141,10 @@ export default function Unsynthesize() {
               {amount?.toSignificant()} {tokenReal?.symbol}
             </UIKitText>
           </RowFlat>
-          on {otherConnection?.chainId ? NETWORK_NAMES[otherConnection?.chainId] : ''}
+          <UIKitText fontSize="14px" mr="8px">
+            on {otherConnection?.chainId ? NETWORK_NAMES[otherConnection?.chainId] : ''} to address {account2}
+          </UIKitText>
+
         </AutoColumn>
     )
   }
@@ -175,11 +177,12 @@ export default function Unsynthesize() {
                     />
                 )}
                 pendingText={pendingText}
+                chainId={chainId1}
             />
             <CardBody>
               <AutoColumn gap="20px">
-                {connection?.chainId && <ColumnCenter>
-                  {NETWORK_NAMES[connection.chainId]}
+                {account1 && chainId1 && <ColumnCenter>
+                  {NETWORK_NAMES[chainId1]}
                 </ColumnCenter>}
                 <CurrencyInputPanel
                     value={value}

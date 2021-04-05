@@ -324,6 +324,7 @@ export default function AddLiquidity({
               />
             )}
             pendingText={pendingText}
+            chainId={chainId}
           />
           <CardBody>
             <AutoColumn gap="20px">

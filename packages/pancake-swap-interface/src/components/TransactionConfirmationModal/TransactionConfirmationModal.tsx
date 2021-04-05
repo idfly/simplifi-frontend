@@ -11,6 +11,7 @@ interface ConfirmationModalProps {
   content: () => React.ReactNode
   attemptingTxn: boolean
   pendingText: string
+  chainId: number | undefined
 }
 
 const TransactionConfirmationModal = ({
@@ -19,10 +20,9 @@ const TransactionConfirmationModal = ({
   attemptingTxn,
   hash,
   pendingText,
-  content
+  content,
+  chainId
 }: ConfirmationModalProps) => {
-  const { chainId } = useFirstWeb3React()
-
   if (!chainId) return null
 
   // confirmation screen
