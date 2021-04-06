@@ -74,13 +74,13 @@ import Loader from 'components/Loader'
 import useI18n from 'hooks/useI18n'
 import PageHeader from 'components/PageHeader'
 import ConnectWalletButton from 'components/ConnectWalletButton'
+import {invert} from "lodash";
 import AppBody from '../AppBody'
 import {
   calculateGasMargin,
-  getContract,
   getSynthesizeContract
 } from "../../utils";
-import {ERC20_ABI} from "../../constants/abis/erc20";
+import {wrappedCurrency} from "../../utils/wrappedCurrency";
 
 const Swap = () => {
   const connection1 = useFirstWeb3React()
@@ -233,15 +233,10 @@ const Swap = () => {
       recipient
   )
 
-
   const {priceImpactWithoutFee} = computeTradePriceBreakdown(trade)
 
-  const [tokenReal, setTokenReal] = useState<Token | undefined>(undefined)
-  const allTokens = useAllTokens(connection1)
-  const outputTokenAddress: string | undefined = Object.keys(allTokens).find((address) => {
-    return allTokens[address].symbol === currencies[Field.OUTPUT]?.symbol
-  })
-  const otherAllTokens = useAllTokens(connection2)
+  const [syntheticToken, setSyntheticToken] = useState<Token | undefined>(undefined)
+  const [originalToken, setOriginalToken] = useState<Token | undefined>(undefined)
 
   // useEffect(() => {
   //   if (!outputTokenAddress || !library1 || !account1 || !chainId1) return
@@ -250,24 +245,25 @@ const Swap = () => {
   //   tok?.approve(SYNTHESIZE_ADDRESS[chainId1], 0, {})
   // }, [allTokens, chainId1, outputTokenAddress, account1, library1])
 
+  const allTokens = useAllTokens(connection1)
+  const [tokenMap, setTokenMap] = useState<{[string: string]:string}[]>([])
   useEffect(() => {
-    if (!chainId1 || !library1 || !account1 || !outputTokenAddress) return
-    setTokenReal(undefined);
-    (async () => {
-      const contract = getSynthesizeContract(chainId1, library1, account1)
-      try {
-        console.log('outputTokenAddress', outputTokenAddress)
-        const realAddress = await contract.representationReal(outputTokenAddress)
+    if(!connection1 || !chainId1 || !library1 || !account1) return;
 
-        console.log('realAddress', realAddress)
-        const realToken = otherAllTokens[realAddress]
-        console.log('realToken', realToken)
-        setTokenReal(realToken || undefined)
-      } catch (e) {
-        console.error('representationReal error', e)
+    const contract = getSynthesizeContract(chainId1, library1, account1);
+    (async () => {
+      const allSyntheticTokens = Object.keys(allTokens)
+      for (let i = 0; i < allSyntheticTokens.length; i++) {
+        const syntheticAddress = allSyntheticTokens[i]
+        const originalAddress = await contract.representationReal(syntheticAddress)
+        if(originalAddress && syntheticAddress) {
+          setTokenMap((prevState) => {
+            return {...prevState, [syntheticAddress]: originalAddress}
+          })
+        }
       }
     })()
-  }, [otherAllTokens, chainId1, library1, account1, outputTokenAddress])
+  }, [connection1, chainId1, library1, account1, allTokens])
 
 
   const amount = tryParseAmount('1', currencies[Field.OUTPUT])
@@ -280,29 +276,27 @@ const Swap = () => {
     const swapLog = receipt.logs.find((log) => {
       return log.topics[0] === SWAP_TOPIC0
     })
-    console.log('swapLog', swapLog)
     if (!swapLog) return null
 
     const params = swapLog.data.slice(2, -1).match(/.{1,64}/g)
-    console.log('params', params)
-
     if (!params) return null
 
-    const amountOut = BigNumber.from(`0x${params[2]}`)
-    console.log('amountOut', amountOut)
-
-    return amountOut
+    return BigNumber.from(`0x${params[2]}`)
   }
 
   const onApproved = useCallback(async (swapAmount: BigNumber) => {
     if (!chainId1 || !library1 || !account1 || !account2) return
+    if(!syntheticToken) {
+      console.error('Synthetic token was not set')
+      return
+    }
 
     setPendingText((prevState) => (
       [...prevState, 'Swap synthetic token to real token on other chain']
     ))
 
     const synthesize = getSynthesizeContract(chainId1, library1, account1)
-    const argsBurn = [outputTokenAddress, swapAmount.toString(), account2]
+    const argsBurn = [syntheticToken.address, swapAmount.toString(), account2]
     console.log('argsBurn', argsBurn)
     const estimateBurn = synthesize.estimateGas.burn
 
@@ -322,7 +316,7 @@ const Swap = () => {
             ))
 
             const filter = {
-              address: tokenReal?.address,
+              address: originalToken?.address,
               topics: [
                 utils.id("Transfer(address,address,uint256)")
               ]
@@ -349,13 +343,16 @@ const Swap = () => {
             throw err
           })
     })
-  }, [chainId1, account1, account2, library1, library2, outputTokenAddress, tokenReal])
+  }, [chainId1, account1, account2, library1, library2, syntheticToken, originalToken])
 
   const onSwapMined = useCallback(async (receipt: TransactionReceipt) => {
     setPendingText((prevState) => (
         [...prevState, 'Swap transaction mined']
     ))
-    if (!library1) return
+    if (!library1) {
+      console.error('There are no library1')
+      return
+    }
 
     const swapAmount = extractSwapAmount(receipt)
     if (!swapAmount) {
@@ -386,6 +383,7 @@ const Swap = () => {
     if (!swapCallback) {
       return
     }
+    setPendingText([])
     setSwapState((prevState) => ({
       ...prevState,
       attemptingTxn: true,
@@ -471,14 +469,21 @@ const Swap = () => {
     }
   }, [maxAmountInput, onUserInput])
 
-  const handleOutputSelect = useCallback(
-      (outputCurrency) => {
-        onCurrencySelection(Field.OUTPUT, outputCurrency)
-        if (outputCurrency.symbol.toLowerCase() === 'syrup') {
-          checkForSyrup(outputCurrency.symbol.toLowerCase(), 'Buying')
-        }
-      },
-      [onCurrencySelection, checkForSyrup]
+  const handleOutputSelect = useCallback((outputCurrency) => {
+      const original = wrappedCurrency(outputCurrency, chainId2)
+      if(!original) return
+
+      setOriginalToken(original)
+
+      const synthetic = allTokens[invert(tokenMap)[original.address]]
+      setSyntheticToken(synthetic)
+
+      onCurrencySelection(Field.OUTPUT, synthetic)
+      if (synthetic?.symbol?.toLowerCase() === 'syrup') {
+        checkForSyrup(synthetic.symbol.toLowerCase(), 'Buying')
+      }
+    },
+    [onCurrencySelection, checkForSyrup, chainId2, tokenMap, allTokens]
   )
 
   return (
@@ -508,7 +513,7 @@ const Swap = () => {
                 onConfirm={handleSwap}
                 swapErrorMessage={swapErrorMessage}
                 onDismiss={handleConfirmDismiss}
-                pendingText={pendingText.join("<br/>")}
+                pendingText={pendingText.map((item, index) => `${index+1}. ${item}`).join("<br/>")}
                 chainId={chainId2}
             />
             <PageHeader
@@ -567,12 +572,15 @@ const Swap = () => {
                           : TranslateString(80, 'To')
                     }
                     showMaxButton={false}
-                    currency={currencies[Field.OUTPUT]}
+                    currency={originalToken}
                     onCurrencySelect={handleOutputSelect}
                     otherCurrency={currencies[Field.INPUT]}
                     id="swap-currency-output"
-                    connection={connection1}
+                    connection={connection2}
                 />
+
+                {originalToken && !syntheticToken &&
+                <Text color="red">There are no synthetic representation</Text>}
 
                 {recipient !== null && !showWrap ? (
                     <>
