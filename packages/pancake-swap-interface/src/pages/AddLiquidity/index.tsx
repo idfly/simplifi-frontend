@@ -7,7 +7,7 @@ import {
   BNB,
   TokenAmount,
   WETH,
-  ETHER
+  ETHER, Token
 } from '@pancakeswap-libs/sdk'
 import { Button, CardBody, AddIcon, Text as UIKitText } from '@pancakeswap-libs/uikit'
 import { RouteComponentProps } from 'react-router-dom'
@@ -22,7 +22,7 @@ import { MinimalPositionCard } from 'components/PositionCard'
 import Row, { RowBetween, RowFlat } from 'components/Row'
 
 import { PairState } from 'data/Reserves'
-import {useFirstWeb3React} from 'hooks'
+import { useFirstWeb3React, useSecondWeb3React } from 'hooks'
 import { useCurrency } from 'hooks/Tokens'
 import { ApprovalState, useApproveCallback } from 'hooks/useApproveCallback'
 import { Field } from 'state/mint/actions'
@@ -32,7 +32,7 @@ import { useTransactionAdder } from 'state/transactions/hooks'
 import { useIsExpertMode, useUserDeadline, useUserSlippageTolerance } from 'state/user/hooks'
 import { calculateGasMargin, calculateSlippageAmount, getRouterContract } from 'utils'
 import { maxAmountSpend } from 'utils/maxAmountSpend'
-import { wrappedCurrency } from 'utils/wrappedCurrency'
+import {wrappedCurrency} from 'utils/wrappedCurrency'
 import { currencyId } from 'utils/currencyId'
 import Pane from 'components/Pane'
 import ConnectWalletButton from 'components/ConnectWalletButton'
@@ -42,6 +42,9 @@ import { Dots, Wrapper } from '../Pool/styleds'
 import { ConfirmAddModalBottom } from './ConfirmAddModalBottom'
 import { PoolPriceBar } from './PoolPriceBar'
 import {NETWORK_NAMES, ROUTER_ADDRESS} from '../../constants'
+import useTokenMap from "../../hooks/useTokenMap";
+import useSynthesize from "../../hooks/useSynthesize";
+import {tryParseAmount} from "../../state/swap/hooks";
 
 export default function AddLiquidity({
   match: {
@@ -50,15 +53,17 @@ export default function AddLiquidity({
   history,
 }: RouteComponentProps<{ currencyIdA?: string; currencyIdB?: string }>) {
   const connection1 = useFirstWeb3React()
+  const connection2 = useSecondWeb3React()
 
   const { account, chainId, library } = connection1
+  const { chainId: chainId2 } = connection2
 
   const currencyA = useCurrency(connection1, currencyIdA)
   const currencyB = useCurrency(connection1, currencyIdB)
   const TranslateString = useI18n()
 
   const oneCurrencyIsNative = Boolean(
-    chainId &&
+    chainId && chainId2 &&
       ((currencyA && currencyEquals(currencyA, WETH[chainId])) ||
         (currencyB && currencyEquals(currencyB, WETH[chainId])))
   )
@@ -66,6 +71,13 @@ export default function AddLiquidity({
 
   // mint state
   const { independentField, typedValue, otherTypedValue } = useMintState()
+
+  const {
+    syntheticToken,
+    originalToken,
+    selectOriginalToken
+  } = useTokenMap(connection1)
+
   const {
     dependentField,
     currencies,
@@ -78,19 +90,19 @@ export default function AddLiquidity({
     liquidityMinted,
     poolTokenPercentage,
     error,
-  } = useDerivedMintInfo(connection1, currencyA ?? undefined, currencyB ?? undefined)
+  } = useDerivedMintInfo(connection1, currencyA ?? undefined, syntheticToken ?? undefined)
   const { onFieldAInput, onFieldBInput } = useMintActionHandlers(noLiquidity)
+
+  const originalTokenAmount = tryParseAmount(parsedAmounts[Field.CURRENCY_B]?.toExact(), originalToken)
 
   const isValid = !error
 
   // modal and loading
   const [showConfirm, setShowConfirm] = useState<boolean>(false)
-  const [attemptingTxn, setAttemptingTxn] = useState<boolean>(false) // clicked confirm
 
   // txn values
   const [deadline] = useUserDeadline() // custom from users settings
   const [allowedSlippage] = useUserSlippageTolerance() // custom from users
-  const [txHash, setTxHash] = useState<string>('')
 
   // get formatted amounts
   const formattedAmounts = {
@@ -127,6 +139,8 @@ export default function AddLiquidity({
       useApproveCallback(connection1, parsedAmounts[Field.CURRENCY_B], chainId ? ROUTER_ADDRESS[chainId] : undefined)
 
   const addTransaction = useTransactionAdder(connection1)
+
+  const {approveAndSynthesize, setTxHash, txHash, attemptingTxn, setAttemptingTxn} = useSynthesize(connection2, connection1, originalTokenAmount)
 
   async function onAdd() {
     if (!chainId || !library || !account) return
@@ -254,7 +268,7 @@ export default function AddLiquidity({
         currencies={currencies}
         parsedAmounts={parsedAmounts}
         noLiquidity={noLiquidity}
-        onAdd={onAdd}
+        onAdd={() => approveAndSynthesize(onAdd)}
         poolTokenPercentage={poolTokenPercentage}
       />
     )
@@ -275,9 +289,10 @@ export default function AddLiquidity({
     },
     [currencyIdB, history, currencyIdA]
   )
-  const handleCurrencyBSelect = useCallback(
-    (currB: Currency) => {
-      const newCurrencyIdB = currencyId(currB)
+  const handleCurrencyBSelect = useCallback((currB: Currency) => {
+      const synthetic = selectOriginalToken(wrappedCurrency(currB, chainId2) as Token)
+
+      const newCurrencyIdB = currencyId(synthetic)
       if (currencyIdA === newCurrencyIdB) {
         if (currencyIdB) {
           history.push(`/add/${currencyIdB}/${newCurrencyIdB}`)
@@ -288,7 +303,7 @@ export default function AddLiquidity({
         history.push(`/add/${currencyIdA || 'BNB'}/${newCurrencyIdB}`)
       }
     },
-    [currencyIdA, history, currencyIdB]
+    [currencyIdA, history, currencyIdB, chainId2, selectOriginalToken]
   )
 
   const handleDismissConfirmation = useCallback(() => {
@@ -298,7 +313,7 @@ export default function AddLiquidity({
       onFieldAInput('')
     }
     setTxHash('')
-  }, [onFieldAInput, txHash])
+  }, [onFieldAInput, txHash, setTxHash])
 
   return (
     <>
@@ -371,10 +386,10 @@ export default function AddLiquidity({
                   onFieldBInput(maxAmounts[Field.CURRENCY_B]?.toExact() ?? '')
                 }}
                 showMaxButton={!atMaxAmounts[Field.CURRENCY_B]}
-                currency={currencies[Field.CURRENCY_B]}
+                currency={originalToken}
                 id="add-liquidity-input-tokenb"
                 showCommonBases={false}
-                connection={connection1}
+                connection={connection2}
               />
               {currencies[Field.CURRENCY_A] && currencies[Field.CURRENCY_B] && pairState !== PairState.INVALID && (
                 <div>
@@ -440,7 +455,7 @@ export default function AddLiquidity({
                   <Button
                     onClick={() => {
                       if (expertMode) {
-                        onAdd()
+                        approveAndSynthesize(onAdd)
                       } else {
                         setShowConfirm(true)
                       }

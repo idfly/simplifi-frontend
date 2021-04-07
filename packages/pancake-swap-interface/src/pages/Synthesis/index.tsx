@@ -3,7 +3,6 @@ import {Button, CardBody} from '@pancakeswap-libs/uikit'
 import { Link } from 'react-router-dom'
 import CardNav from 'components/CardNav'
 import { useFirstWeb3React } from 'hooks'
-import useI18n from 'hooks/useI18n'
 import PageHeader from 'components/PageHeader'
 import AppBody from '../AppBody'
 import {AutoColumn} from "../../components/Column";
@@ -11,7 +10,6 @@ import {AutoColumn} from "../../components/Column";
 export default function Synthesis() {
   const connection = useFirstWeb3React()
   const { chainId } = connection
-  const TranslateString = useI18n()
 
   const rinkeby = 4
   const nativeCurrency = chainId && chainId > rinkeby ? 'BNB' : 'ETH'

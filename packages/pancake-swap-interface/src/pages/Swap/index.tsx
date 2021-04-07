@@ -1,4 +1,10 @@
-import {CurrencyAmount, JSBI, Token, Trade} from '@pancakeswap-libs/sdk'
+import {
+  Currency,
+  CurrencyAmount,
+  JSBI,
+  Token,
+  Trade
+} from '@pancakeswap-libs/sdk'
 import {TransactionReceipt} from "@ethersproject/abstract-provider";
 import React, {
   useCallback,
@@ -74,13 +80,13 @@ import Loader from 'components/Loader'
 import useI18n from 'hooks/useI18n'
 import PageHeader from 'components/PageHeader'
 import ConnectWalletButton from 'components/ConnectWalletButton'
-import {invert} from "lodash";
 import AppBody from '../AppBody'
 import {
   calculateGasMargin,
   getSynthesizeContract
 } from "../../utils";
 import {wrappedCurrency} from "../../utils/wrappedCurrency";
+import useTokenMap from "../../hooks/useTokenMap";
 
 const Swap = () => {
   const connection1 = useFirstWeb3React()
@@ -235,36 +241,11 @@ const Swap = () => {
 
   const {priceImpactWithoutFee} = computeTradePriceBreakdown(trade)
 
-  const [syntheticToken, setSyntheticToken] = useState<Token | undefined>(undefined)
-  const [originalToken, setOriginalToken] = useState<Token | undefined>(undefined)
-
-  // useEffect(() => {
-  //   if (!outputTokenAddress || !library1 || !account1 || !chainId1) return
-  //   const tok = getContract(outputTokenAddress, ERC20_ABI, library1, account1)
-  //   console.log('tok', tok)
-  //   tok?.approve(SYNTHESIZE_ADDRESS[chainId1], 0, {})
-  // }, [allTokens, chainId1, outputTokenAddress, account1, library1])
-
-  const allTokens = useAllTokens(connection1)
-  const [tokenMap, setTokenMap] = useState<{[string: string]:string}[]>([])
-  useEffect(() => {
-    if(!connection1 || !chainId1 || !library1 || !account1) return;
-
-    const contract = getSynthesizeContract(chainId1, library1, account1);
-    (async () => {
-      const allSyntheticTokens = Object.keys(allTokens)
-      for (let i = 0; i < allSyntheticTokens.length; i++) {
-        const syntheticAddress = allSyntheticTokens[i]
-        const originalAddress = await contract.representationReal(syntheticAddress)
-        if(originalAddress && syntheticAddress) {
-          setTokenMap((prevState) => {
-            return {...prevState, [syntheticAddress]: originalAddress}
-          })
-        }
-      }
-    })()
-  }, [connection1, chainId1, library1, account1, allTokens])
-
+  const {
+    syntheticToken,
+    originalToken,
+    selectOriginalToken
+  } = useTokenMap(connection1)
 
   const amount = tryParseAmount('1', currencies[Field.OUTPUT])
   const [approvalSynthToken, approveSynthToken] = useApproveCallback(
@@ -473,17 +454,14 @@ const Swap = () => {
       const original = wrappedCurrency(outputCurrency, chainId2)
       if(!original) return
 
-      setOriginalToken(original)
+      const synthetic = selectOriginalToken(original)
 
-      const synthetic = allTokens[invert(tokenMap)[original.address]]
-      setSyntheticToken(synthetic)
-
-      onCurrencySelection(Field.OUTPUT, synthetic)
+      onCurrencySelection(Field.OUTPUT, synthetic as Currency)
       if (synthetic?.symbol?.toLowerCase() === 'syrup') {
         checkForSyrup(synthetic.symbol.toLowerCase(), 'Buying')
       }
     },
-    [onCurrencySelection, checkForSyrup, chainId2, tokenMap, allTokens]
+    [onCurrencySelection, checkForSyrup, chainId2, selectOriginalToken]
   )
 
   return (
@@ -611,6 +589,7 @@ const Swap = () => {
                                   price={trade?.executionPrice}
                                   showInverted={showInverted}
                                   setShowInverted={setShowInverted}
+                                  quoteCurrency={originalToken}
                               />
                             </RowBetween>
                         )}

@@ -51,7 +51,13 @@ export function useSwapActionHandlers(): {
       dispatch(
         selectCurrency({
           field,
-          currencyId: currency instanceof Token ? currency.address : currency === BNB ? 'BNB' : currency === ETHER ? 'ETH' : '',
+          currencyId: currency instanceof Token
+              ? currency.address
+              : currency === BNB
+                  ? 'BNB'
+                  : currency === ETHER
+                      ? 'ETH'
+                      : '',
         })
       )
     },
@@ -93,8 +99,12 @@ export function tryParseAmount(value?: string, currency?: Currency): CurrencyAmo
     const typedValueParsed = parseUnits(value, currency.decimals).toString()
     if (typedValueParsed !== '0') {
       return currency instanceof Token
-        ? new TokenAmount(currency, JSBI.BigInt(typedValueParsed))
-        : CurrencyAmount.ether(JSBI.BigInt(typedValueParsed))
+          ? new TokenAmount(currency, JSBI.BigInt(typedValueParsed))
+          : currency.symbol === 'ETH'
+              ? CurrencyAmount.ether(JSBI.BigInt(typedValueParsed))
+              : currency.symbol === 'BNB'
+                  ? CurrencyAmount.bnb(JSBI.BigInt(typedValueParsed))
+                  : undefined
     }
   } catch (error) {
     // should fail if the user specifies too many decimal places of precision (or maybe exceed max uint?)

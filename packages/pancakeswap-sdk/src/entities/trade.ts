@@ -179,14 +179,18 @@ export class Trade {
     this.inputAmount =
       tradeType === TradeType.EXACT_INPUT
         ? amount
-        : route.input === ETHER || route.input === BNB
+        : route.input === ETHER
         ? CurrencyAmount.ether(amounts[0].raw)
+        : route.input === BNB
+        ? CurrencyAmount.bnb(amounts[0].raw)
         : amounts[0]
     this.outputAmount =
       tradeType === TradeType.EXACT_OUTPUT
         ? amount
-        : route.output === ETHER || route.output === BNB
+        : route.output === ETHER
         ? CurrencyAmount.ether(amounts[amounts.length - 1].raw)
+        : route.output === BNB
+        ? CurrencyAmount.bnb(amounts[amounts.length - 1].raw)
         : amounts[amounts.length - 1]
     this.executionPrice = new Price(
       this.inputAmount.currency,
