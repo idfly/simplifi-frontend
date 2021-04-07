@@ -140,7 +140,12 @@ export default function AddLiquidity({
 
   const addTransaction = useTransactionAdder(connection1)
 
-  const {approveAndSynthesize, setTxHash, txHash, attemptingTxn, setAttemptingTxn} = useSynthesize(connection2, connection1, originalTokenAmount)
+  const {
+    approveAndSynthesize,
+    txHash, setTxHash,
+    attemptingTxn, setAttemptingTxn,
+    pendingText, setPendingText
+  } = useSynthesize(connection2, connection1, originalTokenAmount)
 
   async function onAdd() {
     if (!chainId || !library || !account) return
@@ -190,6 +195,13 @@ export default function AddLiquidity({
       ]
       value = null
     }
+
+    setPendingText((prevState) => {
+      return [...prevState, `Supplying ${parsedAmounts[Field.CURRENCY_A]?.toSignificant(6)} ${
+          currencies[Field.CURRENCY_A]?.symbol
+      } and ${parsedAmounts[Field.CURRENCY_B]?.toSignificant(6)} ${currencies[Field.CURRENCY_B]?.symbol}`
+      ]
+    })
 
     setAttemptingTxn(true)
     // const aa = await estimate(...args, value ? { value } : {})
@@ -268,15 +280,14 @@ export default function AddLiquidity({
         currencies={currencies}
         parsedAmounts={parsedAmounts}
         noLiquidity={noLiquidity}
-        onAdd={() => approveAndSynthesize(onAdd)}
+        onAdd={() => {
+          setPendingText([])
+          approveAndSynthesize(onAdd)}
+        }
         poolTokenPercentage={poolTokenPercentage}
       />
     )
   }
-
-  const pendingText = `Supplying ${parsedAmounts[Field.CURRENCY_A]?.toSignificant(6)} ${
-    currencies[Field.CURRENCY_A]?.symbol
-  } and ${parsedAmounts[Field.CURRENCY_B]?.toSignificant(6)} ${currencies[Field.CURRENCY_B]?.symbol}`
 
   const handleCurrencyASelect = useCallback(
     (currA: Currency) => {
@@ -338,7 +349,7 @@ export default function AddLiquidity({
                 bottomContent={modalBottom}
               />
             )}
-            pendingText={pendingText}
+            pendingText={pendingText.map((item, index) => `${index+1}. ${item}`).join("<br/>")}
             chainId={chainId}
           />
           <CardBody>
@@ -385,7 +396,7 @@ export default function AddLiquidity({
                 onMax={() => {
                   onFieldBInput(maxAmounts[Field.CURRENCY_B]?.toExact() ?? '')
                 }}
-                showMaxButton={!atMaxAmounts[Field.CURRENCY_B]}
+                showMaxButton={false }// !atMaxAmounts[Field.CURRENCY_B]}
                 currency={originalToken}
                 id="add-liquidity-input-tokenb"
                 showCommonBases={false}
@@ -455,6 +466,7 @@ export default function AddLiquidity({
                   <Button
                     onClick={() => {
                       if (expertMode) {
+                        setPendingText([])
                         approveAndSynthesize(onAdd)
                       } else {
                         setShowConfirm(true)

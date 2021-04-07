@@ -160,9 +160,9 @@ export function useDerivedMintInfo(
     error = `Insufficient ${currencies[Field.CURRENCY_A]?.symbol} balance`
   }
 
-  if (currencyBAmount && currencyBalances?.[Field.CURRENCY_B]?.lessThan(currencyBAmount)) {
-    error = `Insufficient ${currencies[Field.CURRENCY_B]?.symbol} balance`
-  }
+  // if (currencyBAmount && currencyBalances?.[Field.CURRENCY_B]?.lessThan(currencyBAmount)) {
+  //   error = `Insufficient ${currencies[Field.CURRENCY_B]?.symbol} balance`
+  // }
 
   return {
     dependentField,

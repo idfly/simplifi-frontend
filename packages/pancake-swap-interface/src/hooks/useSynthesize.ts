@@ -4,7 +4,7 @@ import {CurrencyAmount, Token} from "@pancakeswap-libs/sdk";
 import {Web3ReactContextInterface} from "@web3-react/core/dist/types";
 import {TransactionResponse, Web3Provider} from "@ethersproject/providers";
 import {utils} from "ethers";
-import {useAllTokens} from "./Tokens";
+import {useAllTokens, useToken} from "./Tokens";
 import {
   calculateGasMargin, getContract,
   getPortalContract,
@@ -29,8 +29,9 @@ const useSynthesize = (
   const originalTokenAddress: string | undefined = Object.keys(allTokens).find((address) => {
     return allTokens[address].symbol === amount?.currency?.symbol
   })
-  const originalToken = useTokenContract(originalConnection, originalTokenAddress, true);
+  const originalToken = useToken(originalConnection, originalTokenAddress);
 
+  const [pendingText, setPendingText] = useState<string[]>([])
   const [txHash, setTxHash] = useState<string>('')
   const [attemptingTxn, setAttemptingTxn] = useState<boolean>(false) // clicked confirm
   const [syntheticToken, setSyntheticToken] = useState<Token|undefined>(undefined)
@@ -55,9 +56,13 @@ const useSynthesize = (
 
 
   const synthesize = useCallback(async (onSynthesize?: () => void): Promise<void> => {
-    if (!originalToken || !originalChainId || !originalLibrary || !originalAccount || !account) {
+    if (!originalToken || !syntheticToken || !originalChainId || !originalLibrary || !originalAccount || !account) {
       return
     }
+
+    setPendingText((prevState) => (
+        [...prevState, `Synthesize original token ${originalToken.symbol} to ${syntheticToken.symbol}`]
+    ))
 
     const portal = getPortalContract(originalChainId, originalLibrary, originalAccount)
     const argsSynt = [originalToken.address, amount?.raw.toString(), account]
@@ -76,15 +81,22 @@ const useSynthesize = (
               summary: `Synthesize ${amount?.toSignificant()} ${amount?.currency?.symbol}`,
             })
 
+            setPendingText((prevState) => (
+                [...prevState, `Waiting for synthesize mined...`]
+            ))
             if (onSynthesize) {
               const filter = {
-                address: syntheticToken?.address,
+                address: syntheticToken.address,
                 topics: [
                   utils.id("Transfer(address,address,uint256)")
                 ]
               }
               library?.once(filter, (log) => {
                 console.log('log', log)
+
+                setPendingText((prevState) => (
+                    [...prevState, `Synthesize transaction mined`]
+                ))
                 onSynthesize()
               })
             }
@@ -102,11 +114,20 @@ const useSynthesize = (
 
   const approveAndSynthesize = useCallback(async (onSynthesize: () => void) => {
     if (approval !== ApprovalState.APPROVED) {
+      setPendingText((prevState) => (
+          [...prevState, 'Approving original token']
+      ))
+      setAttemptingTxn(true)
       const approveResponse = await approve()
       console.log('approveResponse', approveResponse)
       if (approveResponse) {
         setTxHash(approveResponse.hash)
-        originalLibrary?.waitForTransaction(approveResponse.hash).then(() => synthesize(onSynthesize))
+        originalLibrary?.waitForTransaction(approveResponse.hash).then(() => {
+          setPendingText((prevState) => (
+              [...prevState, 'Original token approved']
+          ))
+          synthesize(onSynthesize)
+        })
       }
     } else {
       await synthesize(onSynthesize)
@@ -130,7 +151,9 @@ const useSynthesize = (
     setAttemptingTxn,
     txHash,
     setTxHash,
-    approveAndSynthesize
+    approveAndSynthesize,
+    pendingText,
+    setPendingText
   }
 }
 
