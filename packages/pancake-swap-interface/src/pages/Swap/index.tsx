@@ -5,7 +5,6 @@ import {
   Token,
   Trade
 } from '@pancakeswap-libs/sdk'
-import {TransactionReceipt} from "@ethersproject/abstract-provider";
 import React, {
   useCallback,
   useContext,
@@ -21,6 +20,8 @@ import {
   IconButton,
   Text
 } from '@pancakeswap-libs/uikit'
+import {TransactionReceipt} from "@ethersproject/abstract-provider";
+import {BigNumber} from "@ethersproject/bignumber";
 import {ThemeContext} from 'styled-components'
 import AddressInputPanel from 'components/AddressInputPanel'
 import Card, {GreyCard} from 'components/Card'
@@ -44,25 +45,14 @@ import TokenWarningModal from 'components/TokenWarningModal'
 import SyrupWarningModal from 'components/SyrupWarningModal'
 import ProgressSteps from 'components/ProgressSteps'
 
-import {
-  INITIAL_ALLOWED_SLIPPAGE,
-  SYNTHESIZE_ADDRESS
-} from 'constants/index'
+import { INITIAL_ALLOWED_SLIPPAGE } from 'constants/index'
 import {useFirstWeb3React, useSecondWeb3React} from 'hooks'
-import {useAllTokens, useCurrency} from 'hooks/Tokens'
-import {
-  ApprovalState,
-  useApproveCallback,
-  useApproveCallbackFromTrade
-} from 'hooks/useApproveCallback'
+import {useCurrency} from 'hooks/Tokens'
+import { ApprovalState, useApproveCallbackFromTrade } from 'hooks/useApproveCallback'
 import {useSwapCallback} from 'hooks/useSwapCallback'
 import useWrapCallback, {WrapType} from 'hooks/useWrapCallback'
 import {Field} from 'state/swap/actions'
-import {TransactionResponse} from "@ethersproject/providers";
-import {BigNumber} from "@ethersproject/bignumber";
-import {utils} from "ethers";
 import {
-  tryParseAmount,
   useDefaultsFromURLSearch,
   useDerivedSwapInfo,
   useSwapActionHandlers,
@@ -81,19 +71,16 @@ import useI18n from 'hooks/useI18n'
 import PageHeader from 'components/PageHeader'
 import ConnectWalletButton from 'components/ConnectWalletButton'
 import AppBody from '../AppBody'
-import {
-  calculateGasMargin,
-  getSynthesizeContract
-} from "../../utils";
 import {wrappedCurrency} from "../../utils/wrappedCurrency";
 import useTokenMap from "../../hooks/useTokenMap";
+import useBurn from "../../hooks/useBurn";
 
 const Swap = () => {
   const connection1 = useFirstWeb3React()
   const connection2 = useSecondWeb3React()
 
-  const {chainId: chainId1, library: library1, account: account1} = connection1
-  const {chainId: chainId2, library: library2, account: account2} = connection2
+  const {chainId: chainId1, library: library1} = connection1
+  const {chainId: chainId2, library: library2} = connection2
 
   const loadedUrlParams = useDefaultsFromURLSearch(connection1)
   const TranslateString = useI18n()
@@ -103,7 +90,6 @@ const Swap = () => {
     useCurrency(connection1, loadedUrlParams?.inputCurrencyId),
     useCurrency(connection2, loadedUrlParams?.outputCurrencyId),
   ]
-  const [pendingText, setPendingText] = useState<string[]>([])
   const [dismissTokenWarning, setDismissTokenWarning] = useState<boolean>(false)
   const [isSyrup, setIsSyrup] = useState<boolean>(false)
   const [syrupTransactionType, setSyrupTransactionType] = useState<string>('')
@@ -241,16 +227,24 @@ const Swap = () => {
 
   const {priceImpactWithoutFee} = computeTradePriceBreakdown(trade)
 
-  const {
-    syntheticToken,
-    originalToken,
-    selectOriginalToken
-  } = useTokenMap(connection1)
-
-  const amount = tryParseAmount('1', currencies[Field.OUTPUT])
-  const [approvalSynthToken, approveSynthToken] = useApproveCallback(
-      connection1, amount, chainId1 ? SYNTHESIZE_ADDRESS[chainId1] : undefined
-  )
+  const onTxHashChanged = (newTxHash: string|undefined) => {
+    setSwapState((prevState) => ({
+      ...prevState,
+      txHash: newTxHash,
+    }))
+  }
+  const onAttemptingTxnChanged = (newAttemptingTxn: boolean) => {
+    setSwapState((prevState) => ({
+      ...prevState,
+      attemptingTxn: newAttemptingTxn,
+    }))
+  }
+  const onSwapErrorChanged = (newError: string|undefined) => {
+    setSwapState((prevState) => ({
+      ...prevState,
+      swapErrorMessage: newError,
+    }))
+  }
 
   const extractSwapAmount = (receipt: TransactionReceipt): BigNumber | null => {
     const SWAP_TOPIC0 = '0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822'
@@ -265,97 +259,15 @@ const Swap = () => {
     return BigNumber.from(`0x${params[2]}`)
   }
 
-  const onApproved = useCallback(async (swapAmount: BigNumber) => {
-    if (!chainId1 || !library1 || !account1 || !account2) return
-    if(!syntheticToken) {
-      console.error('Synthetic token was not set')
-      return
-    }
-
-    setPendingText((prevState) => (
-      [...prevState, 'Swap synthetic token to real token on other chain']
-    ))
-
-    const synthesize = getSynthesizeContract(chainId1, library1, account1)
-    const argsBurn = [syntheticToken.address, swapAmount.toString(), account2]
-    console.log('argsBurn', argsBurn)
-    const estimateBurn = synthesize.estimateGas.burn
-
-    await estimateBurn(...argsBurn).then((estimatedGasLimit) => {
-      synthesize.burn(...argsBurn, {
-        gasLimit: calculateGasMargin(estimatedGasLimit),
-      })
-          .then((response: TransactionResponse) => {
-            console.log('response', response)
-            setSwapState((prevState) => ({
-              ...prevState,
-              txHash: response.hash,
-            }))
-
-            setPendingText((prevState) => (
-                [...prevState, 'Waiting for transaction on other chain']
-            ))
-
-            const filter = {
-              address: originalToken?.address,
-              topics: [
-                utils.id("Transfer(address,address,uint256)")
-              ]
-            }
-            library2?.on(filter, (log) => {
-              setSwapState((prevState) => ({
-                ...prevState,
-                attemptingTxn: false,
-                swapErrorMessage: undefined,
-                txHash: log.transactionHash,
-              }))
-              setPendingText([])
-            })
-          })
-          .catch((err: Error) => {
-            setSwapState((prevState) => ({
-              ...prevState,
-              attemptingTxn: false,
-              swapErrorMessage: err.message,
-              txHash: undefined,
-            }))
-            setPendingText([])
-            console.error('Failed to unsynthesize token', err)
-            throw err
-          })
-    })
-  }, [chainId1, account1, account2, library1, library2, syntheticToken, originalToken])
-
-  const onSwapMined = useCallback(async (receipt: TransactionReceipt) => {
-    setPendingText((prevState) => (
-        [...prevState, 'Swap transaction mined']
-    ))
-    if (!library1) {
-      console.error('There are no library1')
-      return
-    }
-
-    const swapAmount = extractSwapAmount(receipt)
-    if (!swapAmount) {
-      console.error('Cannot extract swap amount')
-      return
-    }
-
-    if (approvalSynthToken !== ApprovalState.APPROVED) {
-      setPendingText((prevState) => (
-          [...prevState, 'Approving synthetic token']
-      ))
-
-      const approveResponse = await approveSynthToken()
-      console.log('approveResponse', approveResponse)
-
-      if (approveResponse) {
-        library1?.waitForTransaction(approveResponse.hash).then(() => onApproved(swapAmount))
-      }
-    } else {
-      await onApproved(swapAmount)
-    }
-  }, [library1, approvalSynthToken, approveSynthToken, onApproved])
+  const { syntheticToken, originalToken, selectOriginalToken } = useTokenMap(connection1, connection2)
+  const { approveAndBurn, pendingText, setPendingText } = useBurn({
+    syntheticToken,
+    onTxHashChanged,
+    onAttemptingTxnChanged,
+    onErrorChanged: onSwapErrorChanged,
+    originalConnection: connection2,
+    syntheticConnection: connection1
+  })
 
   const handleSwap = useCallback(() => {
     if (priceImpactWithoutFee && !confirmPriceImpactWithoutFee(priceImpactWithoutFee)) {
@@ -381,7 +293,17 @@ const Swap = () => {
           setPendingText((prevState) => (
               [...prevState, 'Waiting for swap']
           ))
-          library1?.waitForTransaction(hash).then(onSwapMined)
+          library1?.waitForTransaction(hash).then((receipt) => {
+            const swapAmount = extractSwapAmount(receipt)
+            if (!swapAmount) {
+              console.error('Cannot extract swap amount')
+              return
+            }
+            setPendingText((prevState) => (
+                [...prevState, 'Swap transaction mined']
+            ))
+            approveAndBurn(swapAmount)
+          })
         })
         .catch((error) => {
           setSwapState((prevState) => ({
@@ -391,7 +313,7 @@ const Swap = () => {
             txHash: undefined,
           }))
         })
-  }, [priceImpactWithoutFee, swapCallback, setSwapState, library1, onSwapMined])
+  }, [priceImpactWithoutFee, swapCallback, setSwapState, library1, approveAndBurn,setPendingText])
 
   // errors
   const [showInverted, setShowInverted] = useState<boolean>(false)

@@ -76,7 +76,7 @@ export default function AddLiquidity({
     syntheticToken,
     originalToken,
     selectOriginalToken
-  } = useTokenMap(connection1)
+  } = useTokenMap(connection1, connection2)
 
   const {
     dependentField,
@@ -303,7 +303,7 @@ export default function AddLiquidity({
   const handleCurrencyBSelect = useCallback((currB: Currency) => {
       const synthetic = selectOriginalToken(wrappedCurrency(currB, chainId2) as Token)
 
-      const newCurrencyIdB = currencyId(synthetic)
+      const newCurrencyIdB = synthetic ? currencyId(synthetic) : undefined
       if (currencyIdA === newCurrencyIdB) {
         if (currencyIdB) {
           history.push(`/add/${currencyIdB}/${newCurrencyIdB}`)

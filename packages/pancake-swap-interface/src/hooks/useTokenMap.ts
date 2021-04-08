@@ -7,11 +7,15 @@ import {Web3Provider} from "@ethersproject/providers";
 import {useAllTokens} from "./Tokens";
 import {getSynthesizeContract} from "../utils";
 
-const useTokenMap = (connection1: Web3ReactContextInterface<Web3Provider>) => {
+const useTokenMap = (
+    connection1: Web3ReactContextInterface<Web3Provider>,
+    connection2: Web3ReactContextInterface<Web3Provider>
+) => {
   const {chainId: chainId1, library: library1, account: account1} = connection1
   const [syntheticToken, setSyntheticToken] = useState<Token | undefined>(undefined)
   const [originalToken, setOriginalToken] = useState<Token | undefined>(undefined)
   const allTokens = useAllTokens(connection1)
+  const allOriginalTokens = useAllTokens(connection2)
   const [tokenMap, setTokenMap] = useState<{[string: string]:string}[]>([])
 
   const selectOriginalToken = useCallback((newOriginalToken: Token): Token => {
@@ -22,6 +26,14 @@ const useTokenMap = (connection1: Web3ReactContextInterface<Web3Provider>) => {
         return synthetic
       }, [allTokens, tokenMap])
 
+  const selectSyntheticToken = useCallback((newSyntheticToken: Token): Token => {
+        setSyntheticToken(newSyntheticToken)
+
+        const originalTokenAddress = tokenMap[newSyntheticToken.address]
+        const original = allOriginalTokens[originalTokenAddress]
+        setOriginalToken(original)
+        return original
+      }, [allOriginalTokens, tokenMap])
 
   useEffect(() => {
     if(!connection1 || !chainId1 || !library1 || !account1) return;
@@ -42,9 +54,11 @@ const useTokenMap = (connection1: Web3ReactContextInterface<Web3Provider>) => {
   }, [connection1, chainId1, library1, account1, allTokens])
 
   return {
+    tokenMap,
     syntheticToken,
     originalToken,
-    selectOriginalToken
+    selectOriginalToken,
+    selectSyntheticToken
   }
 }
 

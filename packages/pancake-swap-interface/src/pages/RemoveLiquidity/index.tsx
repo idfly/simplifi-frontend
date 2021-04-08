@@ -1,4 +1,9 @@
-import React, { useCallback, useContext, useMemo, useState } from 'react'
+import React, {
+  useCallback,
+  useContext,
+  useMemo,
+  useState
+} from 'react'
 import styled, { ThemeContext } from 'styled-components'
 import { splitSignature } from '@ethersproject/bytes'
 import { Contract } from '@ethersproject/contracts'
@@ -11,6 +16,7 @@ import {
   WETH,
   ETHER
 } from '@pancakeswap-libs/sdk'
+import {TransactionReceipt} from "@ethersproject/abstract-provider"
 import { Button, Flex, Text } from '@pancakeswap-libs/uikit'
 import { ArrowDown, Plus } from 'react-feather'
 import { RouteComponentProps } from 'react-router'
@@ -29,7 +35,7 @@ import { RowBetween, RowFixed } from '../../components/Row'
 import Slider from '../../components/Slider'
 import CurrencyLogo from '../../components/CurrencyLogo'
 import { ROUTER_ADDRESS } from '../../constants'
-import {useFirstWeb3React} from '../../hooks'
+import {useFirstWeb3React, useSecondWeb3React} from '../../hooks'
 import { useCurrency } from '../../hooks/Tokens'
 import { usePairContract } from '../../hooks/useContract'
 
@@ -47,6 +53,7 @@ import { useBurnActionHandlers, useDerivedBurnInfo, useBurnState } from '../../s
 
 import { Field } from '../../state/burn/actions'
 import { useUserDeadline, useUserSlippageTolerance } from '../../state/user/hooks'
+import useBurn from "../../hooks/useBurn";
 
 const OutlineCard = styled.div`
   border: 1px solid ${({ theme }) => theme.colors.borderColor};
@@ -66,11 +73,13 @@ export default function RemoveLiquidity({
   },
 }: RouteComponentProps<{ currencyIdA: string; currencyIdB: string }>) {
   const connection1 = useFirstWeb3React()
+  const connection2 = useSecondWeb3React()
   const [currencyA, currencyB] = [
       useCurrency(connection1, currencyIdA) ?? undefined,
       useCurrency(connection1, currencyIdB) ?? undefined
   ]
   const { account, chainId, library } = connection1
+  const { chainId: chainId2 } = connection2
   const TranslateString = useI18n()
   const [tokenA, tokenB] = useMemo(() => [wrappedCurrency(currencyA, chainId), wrappedCurrency(currencyB, chainId)], [
     currencyA,
@@ -196,6 +205,27 @@ export default function RemoveLiquidity({
   const onCurrencyAInput = useCallback((val: string): void => onUserInput(Field.CURRENCY_A, val), [onUserInput])
   const onCurrencyBInput = useCallback((val: string): void => onUserInput(Field.CURRENCY_B, val), [onUserInput])
 
+  const { approveAndBurn, pendingText, setPendingText } = useBurn({
+    syntheticToken: tokenA, // TODO check is token synthetic in swapped pair
+    onTxHashChanged: (newTxHash) => setTxHash(newTxHash || ''),
+    onAttemptingTxnChanged: setAttemptingTxn,
+    originalConnection: connection2,
+    syntheticConnection: connection1
+  })
+
+  const extractBurnAmount = (receipt: TransactionReceipt): BigNumber | null => {
+    const BURN_TOPIC0 = '0xdccd412f0b1252819cb1fd330b93224ca42612892bb3f4f789976e6d81936496'
+    const burnLog = receipt.logs.find((log) => {
+      return log.topics[0] === BURN_TOPIC0
+    })
+    if (!burnLog) return null
+
+    const params = burnLog.data.slice(2, -1).match(/.{1,64}/g)
+    if (!params) return null
+
+    return BigNumber.from(`0x${params[0]}`)
+  }
+
   // tx sending
   const addTransaction = useTransactionAdder(connection1)
   async function onRemove() {
@@ -204,6 +234,11 @@ export default function RemoveLiquidity({
     if (!currencyAmountA || !currencyAmountB) {
       throw new Error('missing currency amounts')
     }
+
+    setPendingText((prevState) => [...prevState, `Removing ${parsedAmounts[Field.CURRENCY_A]?.toSignificant(6)} ${
+        currencyA?.symbol
+    } and ${parsedAmounts[Field.CURRENCY_B]?.toSignificant(6)} ${currencyB?.symbol}`])
+
     const router = getRouterContract(chainId, library, account)
 
     const amountsMin = {
@@ -316,12 +351,22 @@ export default function RemoveLiquidity({
         gasLimit: safeGasEstimate,
       })
         .then((response: TransactionResponse) => {
-          setAttemptingTxn(false)
-
           addTransaction(response, {
             summary: `Remove ${parsedAmounts[Field.CURRENCY_A]?.toSignificant(3)} ${
               currencyA?.symbol
             } and ${parsedAmounts[Field.CURRENCY_B]?.toSignificant(3)} ${currencyB?.symbol}`,
+          })
+
+          library.waitForTransaction(response.hash).then((receipt) => {
+            const burnAmount = extractBurnAmount(receipt)
+            if (!burnAmount) {
+              console.error('Cannot extract burn amount')
+              return
+            }
+            setPendingText((prevState) => (
+                [...prevState, 'Remove liquidity transaction mined']
+            ))
+            approveAndBurn(burnAmount)
           })
 
           setTxHash(response.hash)
@@ -401,10 +446,6 @@ export default function RemoveLiquidity({
     )
   }
 
-  const pendingText = `Removing ${parsedAmounts[Field.CURRENCY_A]?.toSignificant(6)} ${
-    currencyA?.symbol
-  } and ${parsedAmounts[Field.CURRENCY_B]?.toSignificant(6)} ${currencyB?.symbol}`
-
   const liquidityPercentChangeCallback = useCallback(
     (value: number) => {
       onUserInput(Field.LIQUIDITY_PERCENT, value.toString())
@@ -474,8 +515,8 @@ export default function RemoveLiquidity({
                 bottomContent={modalBottom}
               />
             )}
-            pendingText={pendingText}
-            chainId={chainId}
+            pendingText={pendingText.map((item, index) => `${index+1}. ${item}`).join("<br/>")}
+            chainId={chainId2}
           />
           <AutoColumn gap="md">
             <Body>
