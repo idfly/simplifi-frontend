@@ -167,7 +167,7 @@ export default function AddLiquidity({
     let method: (...args: any) => Promise<TransactionResponse>
     let args: Array<string | string[] | number>
     let value: BigNumber | null
-    if (currencyA === BNB || currencyB === BNB) {
+    if (currencyA === BNB || currencyA === ETHER || currencyB === BNB || currencyB === ETHER) {
       const tokenBIsNative = currencyB === BNB || currencyB === ETHER
       estimate = router.estimateGas.addLiquidityETH
       method = router.addLiquidityETH

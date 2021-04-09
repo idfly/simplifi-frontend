@@ -16,6 +16,43 @@
       "inputs": [
         {
           "indexed": true,
+          "internalType": "bytes32",
+          "name": "_id",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "_from",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "_to",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "_amount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "_token",
+          "type": "address"
+        }
+      ],
+      "name": "BurnRequest",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
           "internalType": "address",
           "name": "previousOwner",
           "type": "address"
@@ -28,6 +65,87 @@
         }
       ],
       "name": "OwnershipTransferred",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "_id",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "_to",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "_amount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "_token",
+          "type": "address"
+        }
+      ],
+      "name": "RevertBurnCompleted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "_id",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "_to",
+          "type": "address"
+        }
+      ],
+      "name": "RevertSynthesizeRequest",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "_id",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "_to",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "_amount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "_token",
+          "type": "address"
+        }
+      ],
+      "name": "SynthesisizeCompleted",
       "type": "event"
     },
     {
@@ -57,11 +175,11 @@
         },
         {
           "internalType": "address",
-          "name": "chain2address",
+          "name": "_chain2address",
           "type": "address"
         }
       ],
-      "name": "burn",
+      "name": "burnSyntheticToken",
       "outputs": [
         {
           "internalType": "bytes32",
@@ -103,7 +221,7 @@
           "type": "bytes32"
         }
       ],
-      "name": "emergencyCashoutRequest",
+      "name": "emergencyUnburn",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -116,7 +234,7 @@
           "type": "bytes32"
         }
       ],
-      "name": "emergencyUnburn",
+      "name": "emergencyUnsyntesizeRequest",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -147,25 +265,6 @@
       "name": "mintSyntheticToken",
       "outputs": [],
       "stateMutability": "nonpayable",
-      "type": "function"
-    },
-    {
-      "inputs": [
-        {
-          "internalType": "bytes32",
-          "name": "",
-          "type": "bytes32"
-        }
-      ],
-      "name": "mintingStates",
-      "outputs": [
-        {
-          "internalType": "uint256",
-          "name": "state",
-          "type": "uint256"
-        }
-      ],
-      "stateMutability": "view",
       "type": "function"
     },
     {
@@ -275,9 +374,9 @@
           "type": "address"
         },
         {
-          "internalType": "uint256",
+          "internalType": "enum Synthesis.RequestState",
           "name": "state",
-          "type": "uint256"
+          "type": "uint8"
         }
       ],
       "stateMutability": "view",
@@ -307,6 +406,25 @@
       "name": "setPortal",
       "outputs": [],
       "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "name": "synthesizeStates",
+      "outputs": [
+        {
+          "internalType": "enum Synthesis.SynthesizeState",
+          "name": "",
+          "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
       "type": "function"
     },
     {

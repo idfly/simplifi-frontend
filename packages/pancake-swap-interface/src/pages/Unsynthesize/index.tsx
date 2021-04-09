@@ -100,12 +100,12 @@ export default function Unsynthesize() {
 
     const synthesize = getSynthesizeContract(chainId1, library1, account1)
     const argsBurn = [syntToken.address, amount?.raw.toString(), account2]
-    const estimateBurn = synthesize.estimateGas.burn
+    const estimateBurn = synthesize.estimateGas.burnSyntheticToken
 
     setAttemptingTxn(true)
 
     await estimateBurn(...argsBurn).then((estimatedGasLimit) => {
-      synthesize.burn(...argsBurn, {
+      synthesize.burnSyntheticToken(...argsBurn, {
         gasLimit: calculateGasMargin(estimatedGasLimit),
       })
           .then((response: TransactionResponse) => {

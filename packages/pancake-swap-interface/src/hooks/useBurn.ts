@@ -58,10 +58,10 @@ const useBurn = ({
     const synthesize = getSynthesizeContract(chainId1, library1, account1)
     const argsBurn = [syntheticToken.address, amount.toString(), account2]
     console.log('argsBurn', argsBurn)
-    const estimateBurn = synthesize.estimateGas.burn
+    const estimateBurn = synthesize.estimateGas.burnSyntheticToken
 
     await estimateBurn(...argsBurn).then((estimatedGasLimit) => {
-      synthesize.burn(...argsBurn, {
+      synthesize.burnSyntheticToken(...argsBurn, {
         gasLimit: calculateGasMargin(estimatedGasLimit),
       })
           .then((response: TransactionResponse) => {

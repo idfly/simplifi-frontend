@@ -126,8 +126,8 @@ export default function RemoveLiquidity({
 
   // allowance handling
   const [signatureData, setSignatureData] = useState<{ v: number; r: string; s: string; deadline: number } | null>(null)
-  const defaultChainId = 56;
-  const [approval, approveCallback] = useApproveCallback(connection1, parsedAmounts[Field.LIQUIDITY], ROUTER_ADDRESS[chainId || defaultChainId])
+  const routerAddress = chainId ? ROUTER_ADDRESS[chainId] : ''
+  const [approval, approveCallback] = useApproveCallback(connection1, parsedAmounts[Field.LIQUIDITY], routerAddress)
   async function onAttemptToApprove() {
     if (!chainId || !pairContract || !pair || !library) throw new Error('missing dependencies')
     const liquidityAmount = parsedAmounts[Field.LIQUIDITY]
@@ -606,7 +606,7 @@ export default function RemoveLiquidity({
                           {oneCurrencyIsETH ? (
                             <StyledInternalLink
                               to={`/remove/${(currencyA === BNB || currencyA === ETHER) ? WETH[chainId].address : currencyIdA}/${
-                                currencyB === BNB ? WETH[chainId].address : currencyIdB
+                                  (currencyB === BNB || currencyB === ETHER) ? WETH[chainId].address : currencyIdB
                               }`}
                             >
                               {TranslateString(1188, 'Receive WBNB')}
@@ -697,7 +697,7 @@ export default function RemoveLiquidity({
                 ) : (
                   <RowBetween>
                     <Button
-                      onClick={onAttemptToApprove}
+                      onClick={approveCallback}
                       variant={approval === ApprovalState.APPROVED || signatureData !== null ? 'success' : 'primary'}
                       disabled={approval !== ApprovalState.NOT_APPROVED || signatureData !== null}
                       mr="8px"
