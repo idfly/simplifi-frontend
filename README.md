@@ -1,10 +1,10 @@
-Simplifi
+Simplifi frontend app
 ===
 
 The application is inherited from PancakeSwap application. 
 
 Added the ability to use two web3 connections simultaneously, 
-download the lists of tokens for each chain, implemented interactions with dex contracts to 
+download the lists of tokens for each chain, implemented interactions with dex contracts to: 
 1. add liquidity;
 2. remove liquidity; 
 3. swap tokens from one chain to another.
