@@ -14,16 +14,22 @@ Sequence diagrams
 
 **Add liquidity**
 
+![Diagram](./docs/add_liquidity.png)
+
 Link to diagram presentation - http://is.gd/JYtC2v
 
 ---
 
 **Swap**
 
+![Diagram](./docs/swap.png)
+
 Link to diagram presentation - http://is.gd/63CbQ6
 
 ---
 
 **Remove liquidity**
+
+![Diagram](./docs/remove_liquidity.png)
 
 Link to diagram presentation - http://is.gd/3srkHM
