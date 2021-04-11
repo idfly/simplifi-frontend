@@ -19,6 +19,7 @@ export * from "./components/Svg";
 export * from "./components/Tag";
 export * from "./components/Text";
 export * from "./components/Link";
+export {LinkExternal} from "./components/Link";
 export * from "./components/Progress";
 export * from "./components/Slider";
 export * from "./components/Spinner";

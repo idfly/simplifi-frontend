@@ -1,6 +1,7 @@
 import React, { Suspense, useEffect, useState } from 'react'
 import { HashRouter, Route, Switch } from 'react-router-dom'
 import styled from 'styled-components'
+import {LinkExternal} from '@pancakeswap-libs/uikit'
 import { Credentials, StringTranslations } from '@crowdin/crowdin-api-client'
 import Popups from '../components/Popups'
 import Web3ReactManager from '../components/Web3ReactManager'
@@ -143,7 +144,14 @@ export default function App() {
                       <Route component={RedirectPathToSwapOnly} />
                     </Switch>
                   </Web3ReactManager>
-                  <Marginer />
+                  <div>
+                    <LinkExternal style={{display: 'inline'}} external href="https://faucet.rinkeby.io/">
+                      ETH Rinkeby faucet
+                    </LinkExternal>
+                    <LinkExternal style={{display: 'inline', marginLeft: '40px'}}  external href="https://testnet.binance.org/faucet-smart">
+                      BSC Testnet faucet
+                    </LinkExternal>
+                  </div>
                 </BodyWrapper>
               </Menu>
             </TranslationsContext.Provider>
