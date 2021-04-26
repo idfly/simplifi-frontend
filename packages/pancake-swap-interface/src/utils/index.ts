@@ -14,10 +14,16 @@ import {
   BNB,
   ETHER
 } from '@pancakeswap-libs/sdk'
-import {PORTAL_ADDRESS, ROUTER_ADDRESS, SYNTHESIZE_ADDRESS} from '../constants'
+import {
+  GASLESS_ADDRESS,
+  PORTAL_ADDRESS,
+  ROUTER_ADDRESS,
+  SYNTHESIZE_ADDRESS
+} from '../constants'
 import { TokenAddressMap } from '../state/lists/hooks'
 import { abi as SynthsizeABI } from '../constants/abis/synthesize.json'
 import { abi as PortalABI } from '../constants/abis/portal.json'
+import { abi as GaslessABI } from '../constants/abis/gasless.json'
 
 // returns the checksummed address if the address is valid, otherwise returns false
 export function isAddress(value: any): string | false {
@@ -114,6 +120,11 @@ export function getSynthesizeContract(chainId: number, library: Web3Provider, ac
 export function getPortalContract(chainId: number, library: Web3Provider, account?: string): Contract {
   const synthesizeAddress = PORTAL_ADDRESS[chainId]
   return getContract(synthesizeAddress, PortalABI, library, account)
+}
+
+export function getGaslessContract(chainId: number, library: Web3Provider, account?: string): Contract {
+  const gaslessAddress = GASLESS_ADDRESS[chainId]
+  return getContract(gaslessAddress, GaslessABI, library, account)
 }
 
 export function escapeRegExp(string: string): string {

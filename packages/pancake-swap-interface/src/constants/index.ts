@@ -24,6 +24,13 @@ export const PORTAL_ADDRESS: ChainMapList = {
   [ChainId.ETHTESTNET]: '0x4671dcFE18901EfB6a5ce2F86a99e8D127B86de8',
 }
 
+export const GASLESS_ADDRESS: ChainMapList = {
+  [ChainId.MAINNET]: '0x438C7943bB5D56b15CFA7e4D78A50B543F8fa89C', // TODO
+  [ChainId.BSCTESTNET]: '0xD6e1CA090404607B683A8a3401F2D7c34F96cd02', // TODO
+  [ChainId.ETHMAINNET]: '0x438C7943bB5D56b15CFA7e4D78A50B543F8fa89C', // TODO
+  [ChainId.ETHTESTNET]: '0x4671dcFE18901EfB6a5ce2F86a99e8D127B86de8', // TODO
+}
+
 // a list of tokens by chain
 type ChainTokenList = {
   readonly [chainId in ChainId]: Token[]

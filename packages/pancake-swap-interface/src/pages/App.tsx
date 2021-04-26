@@ -21,6 +21,7 @@ import Menu from '../components/Menu'
 import Synthesize from "./Synthesize";
 import Synthesis from "./Synthesis";
 import Unsynthesize from "./Unsynthesize";
+import Gasless from "./Gasless";
 
 const AppWrapper = styled.div`
   display: flex;
@@ -131,6 +132,7 @@ export default function App() {
                       <Route exact strict path="/find" component={PoolFinder} />
                       <Route exact strict path="/pool" component={Pool} />
                       <Route exact path="/add" component={AddLiquidity} />
+                      <Route exact path="/gasless" component={Gasless} />
                       <Route exact path="/synthesis" component={Synthesis} />
                       <Route exact path="/synthesize/:currency" component={Synthesize} />
                       <Route exact path="/unsynthesize/:currency" component={Unsynthesize} />
