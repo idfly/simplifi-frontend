@@ -18,11 +18,11 @@ const connectors: Config[] = [
   //   icon: TrustWallet,
   //   connectorId: ConnectorNames.Injected,
   // },
-  // {
-  //   title: "MathWallet",
-  //   icon: MathWallet,
-  //   connectorId: ConnectorNames.Injected,
-  // },
+  {
+    title: "MetaMask-copy",
+    icon: Metamask,
+    connectorId: ConnectorNames.Ethereum2,
+  },
   // {
   //   title: "TokenPocket",
   //   icon: TokenPocket,

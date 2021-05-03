@@ -3,6 +3,7 @@ import { Web3Provider } from '@ethersproject/providers'
 import { InjectedConnector } from '@web3-react/injected-connector'
 import { WalletConnectConnector } from '@web3-react/walletconnect-connector'
 import { WalletLinkConnector } from '@web3-react/walletlink-connector'
+import { Ethereum2Connector } from 'ethereum2-connector'
 import { BscConnector } from '@binance-chain/bsc-connector'
 import { NetworkConnector } from './NetworkConnector'
 
@@ -24,11 +25,10 @@ export function getNetworkLibrary(): Web3Provider {
   return (networkLibrary = networkLibrary ?? new Web3Provider(network.provider as any))
 }
 
-export const injected = new InjectedConnector({
-  supportedChainIds: [1, 4, 97],
-})
-
-export const bscConnector = new BscConnector({ supportedChainIds: [56, 97] })
+const evmNetworksId = [1, 4, 56, 97, 128, 256]
+export const injected = new InjectedConnector({supportedChainIds: evmNetworksId})
+export const ethereum2Connector = new Ethereum2Connector({ supportedChainIds: evmNetworksId })
+export const bscConnector = new BscConnector({ supportedChainIds: evmNetworksId })
 
 // mainnet only
 export const walletconnect = new WalletConnectConnector({
@@ -50,4 +50,5 @@ export const connectorsByName: { [connectorName in ConnectorNames]: any } = {
   [ConnectorNames.Injected]: injected,
   [ConnectorNames.WalletConnect]: walletconnect,
   [ConnectorNames.BSC]: bscConnector,
+  [ConnectorNames.Ethereum2]: ethereum2Connector,
 }

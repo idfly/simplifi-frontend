@@ -6,6 +6,7 @@
   "version": "1.0.0",
   "dependencies": {
     "@binance-chain/bsc-connector": "^1.0.0",
+    "ethereum2-connector": "https://github.com/allush/ethereum2-connector.git#8df13014a0f12f4a288ff26fd623266f10a85205",
     "@crowdin/crowdin-api-client": "^1.8.16",
     "@web3-react/types": "^6.0.7",
     "react-router": "^5.2.0",

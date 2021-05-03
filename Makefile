@@ -13,6 +13,12 @@ build-uikit:
 build:
 	docker run --rm -v "`pwd`:/app" -v "`pwd`/.rush:/root/.rush" -w /app rush bash -c "rush update; rush build;"
 
+update:
+	docker run --rm -v "`pwd`:/app" -v "`pwd`/.rush:/root/.rush" -w /app rush bash -c "rush update --purge;"
+
+purge:
+	docker run --rm -v "`pwd`:/app" -v "`pwd`/.rush:/root/.rush" -w /app rush bash -c "rush purge;"
+
 start:
 	docker-compose -f config/${ENV}/docker-compose.yml  up -d --force-recreate frontend
 
